@@ -1,0 +1,123 @@
+# Handoff: Wolves With Your Friends
+
+Read this first in a new session. It's the full state of the project and the plan.
+
+## The game
+A Roblox co-op party game, 1–10 players, 10-minute workdays, **first person**. It copies the mechanics of
+*Scam With Your Friends* (ringing desk phones, AI callers you talk to by voice, collecting a code or number and
+entering it in a deal app, Personal + Firm money, a daily quota that rises, a boss meeting with a vote for the
+funniest line, a fired screen, a Final Statement ranking, a shop, weapons). The theme is a Wolf of Wall Street style
+brokerage on **floor 100** of a skyscraper, with a city, traffic and a rooftop.
+
+Rules:
+- Cartoony but realistic materials.
+- No movie names, real people or brands.
+- No alcohol: bottles are soda or juice.
+- All-ages, Roblox-safe.
+
+The owner prefers **quality over speed** and wants **models built in Blender first**, then brought into Roblox.
+
+## Repo layout
+- `blender/`: bpy 5.0.1 (pip, Python 3.11) scripts. `lib.py` has the helpers (`cube`, `tube`, `sphere`,
+  `cone`, `torus`, `skin`, `text`, `mat`, `studio`, `render`). The props live in `props.py`:
+  - Materials are named `M(kind, look)`, which gives `"Kind_Look"`, and each kind is a Roblox material name.
+  - A prop's front faces -Y and its floor is at Z=0. Builders are grouped in `BUILDERS`..`BUILDERS_6`.
+  - Build: `python3 props.py --part i 4` for i = 0..3 (run in parallel, about 1 minute), then `python3 merge_props.py`.
+    This writes `props.blend`. Building in one process is O(n²) and slow.
+  - `python3 export_props.py` writes `export/props/PropPack1-4.fbx` and `roblox/src/shared/PropLooks.lua`
+    (a Roblox material, color and transparency per material name, plus each prop's bounds).
+  - `python3 render_props.py [Name ...]` renders `renders/prop_<Name>.png`.
+- `blender/office_scene.py`: the whole-floor layout, 48 x 34 m.
+  - It writes `roblox/src/shared/OfficeLayout.lua`, which holds parts, props, screens, tickers, signs, boards,
+    lights, chaos areas, meeting seats and named points.
+  - `--layout-only` writes the layout and skips rendering (about 1 minute). A full run also renders the overview,
+    the plan and 5 interior shots to `renders/office_*.png`.
+  - Placement uses `place(name, loc, rot)`. `rot` turns the prop's front: 0 faces -Y, pi faces +Y, R(90) faces +X.
+  - Chairs face -Y, so a chair south of a desk gets rot pi.
+- `roblox/`: a Rojo 7.6.1 project. Build it with `rojo build default.project.json -o WolvesWithYourFriends.rbxl`.
+  - Type-check with `luau-lsp analyze --sourcemap=sourcemap.json --definitions=<globalTypes.d.luau> src`.
+    Get the definitions from the luau-lsp repo (`scripts/globalTypes.d.luau`); rojo and luau-lsp come from their
+    GitHub releases.
+  - Studs per meter: `Config.STUDS_PER_METER = 3`. Blender (x, y, z) maps to Roblox (x·S, z·S, −y·S), and the turn
+    around Z stays the same (see `ArtLibrary.pos/cf/offset/facing`).
+  - `server/OfficeBuilder.lua` builds the floor from OfficeLayout:
+    - working desks on every DeskSet, with a Mirror SurfaceGui, the INCOMING card, the ring countdown pill,
+      and Answer / Use Computer / Take Over prompts
+    - elevators with sliding doors and a car; players spawn inside the middle car
+    - chart walls tagged `DeskScreen`, tickers tagged `Ticker`, and boards tagged `OfficeBoard`
+    - props that aren't in the FIXED list get `Props.movable`
+  - `server/ArtLibrary.lua` finds imported models in `ServerStorage.PropModels`, scales and turns them, and applies
+    PropLooks. It falls back to grey boxes.
+  - `server/CallService.lua`, `ClientAI.lua` (TextGenerator + canned fallback), `Economy.lua`, `GameLoop.lua`
+    (day → meeting → fired), `Props.lua`, `NPCGuide.lua` (NPCs removed; it only fires Ring/Chairman remotes).
+  - Client: `Desktop.lua` (Shark OS: basic windows/taskbar), `apps/PhoneApp.lua`, `DealApp.lua`, `ScriptApp.lua`,
+    `Voice.lua` (mic → AudioSpeechToText, AudioTextToSpeech replies), `IdleScreens.lua` (live charts on idle
+    monitors), `OfficeBoards.lua` (LED clocks, suspicion meter, day goal board), `Hud.lua`, `Menu.lua`, `Meeting.lua`,
+    `City.lua`, `Decor.lua`.
+  - The owner imports the 4 prop packs into `ServerStorage/PropModels`; the steps are in `roblox/README.md`.
+
+## Done
+- Characters, and 144+ props in Blender (office furniture, Wall Street decor, food, weapons, hand poses, flag,
+  pool table, broken fish tank, rooftop not yet).
+- The full office layout, rendered, and generated into Roblox.
+- Calls with AI and voice.
+- Live idle screens and wall boards.
+- Usernames hidden.
+- Rings show a yellow outline and a countdown with **no arrows**, and any computer can be used.
+
+## Still to do (in this order)
+1. **Windows-style computer (big).** Shark OS should look like a real Windows-like desktop with no Microsoft
+   branding:
+   - Desktop: start menu, taskbar with pinned apps and a tray clock, windows with min/max/close, drag and snap,
+     wallpapers plus a Backgrounds app, and a file explorer (the Files app with folders and openable documents).
+   - Apps: Script, Browser, Phone, Notes, a Shark Mart store (Upgrades / Store / Employees / Bank), Camera,
+     Remote Access, Backgrounds, an antivirus, Card Verify, PumpAds, a minigame and Files.
+   - Taskbar info: objective text, PERSONAL, TEAM/QUOTA, review timer, clock + day.
+   - Phone app:
+     - Show the caller's avatar, a personality line ("sounds believes anything"), and a trust bar with a number
+       and label.
+     - Show chat bubbles and **3 suggested replies**.
+     - Buttons: Request Access, Hang Up, speaker, mic.
+     - At a desk with no call it says "No call at this desk. Find a RINGING desk."
+   - Camera app: a live self-view from the desk webcam, Normal/Warm/Cool/Noir filters, and SNAP to Files/Photos.
+   - Upgrades (the reference game's, renamed): Account Access, Advanced Extractor, Stall Script, Smooth Talker,
+     Better Script, VPN.
+   - Your own monitor shows your desktop to passers-by.
+2. **Remote control of the caller's computer.** The caller must grant access (the AI decides). Then:
+   - you see their own generated desktop and drive their cursor
+   - you open their bank, email, files and crypto, and move money out under a time limit
+   - they can pull access back if they get suspicious
+3. **Physics.** Everything can be grabbed and thrown, with a throw key.
+   - Trash bins take items in and spill them when thrown.
+   - Coffee only pours into a cup, cups spill and leave puddles, and food can be eaten.
+   - The fish tank breaks (swap in the FishTankBroken model); the printer prints.
+4. **Luxury rooftop (Blender first).**
+   - Elevator buttons ROOFTOP / OFFICE.
+   - A big pool, bars, a DJ stage with music, and lots of decor.
+   - Breakable soda/juice bottles with liquid, and money and papers on the floor.
+   - Throwing things off the roof; thrown items can knock people off.
+   - Falling respawns you at your last safe spot.
+5. **Character menu (only before spawning).**
+   - Lots of clothes, hair, accessories, skin colors, boy/girl, body types and animation packs.
+   - A draggable, zoomable 3D preview.
+   - A menu background with candlesticks, cash and a ticker.
+6. **Call upgrades and 100+ callers.**
+   - Callers get distinct voices (11 TTS voices × pitch/speed).
+   - Parody celebrities and a "president" type are fine, but **never real people**.
+   - Filler sounds while the caller thinks, and interruptions.
+   - Memory and contradictions, a suspicion meter with hang-ups, and auto-notes of revealed info.
+   - Caller types: bait, grandma, paranoid.
+   - Others hear the call spatially at the desk.
+7. **Office suspicion and raid.** It rises from suspicious calls and chaos. At 100% a cutscene plays:
+   helicopters with officers rappelling, and cartoony cops in Roblox-avatar style with cartoon guns coming out of
+   the elevators.
+8. **Hands.** First-person hands you can move independently, point, gesture, and a grab pose. The hand models are
+   in props (HandOpen/Point/ThumbsUp/Fist/Peace/CallMe/Grab).
+9. **Spatial sound effects.** Phone ring, prop impacts, breaking, elevator ding and doors, DJ music, and a
+   playable piano.
+10. **Talking mouths** (AudioAnalyzer on each player's voice) and a **headset mic** on every character.
+
+## Notes
+- The owner can't send video. They test in Studio and send screenshots.
+- The AI (TextGenerator) may not run in unpublished Studio; the canned lines are the fallback.
+- Always rebuild the .rbxl, type-check, commit and push after each piece of work.
