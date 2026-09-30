@@ -199,6 +199,8 @@ function CallService.answer(player: Player, desk)
 		claimed = {},
 		busy = true,
 		closed = false,
+		warnedOffline = false,
+		usedLines = {},
 	}
 	desk.state = "active"
 	desk.call = call
@@ -268,6 +270,10 @@ local function onSay(player: Player, text: any)
 	local res = ClientAI.respond(call, player.DisplayName, clean)
 	if call.closed then
 		return
+	end
+	if res.offline and not call.warnedOffline then
+		call.warnedOffline = true
+		Net.Toast:FireClient(player, "AI clients offline - using backup lines. Check Output for [ClientAI].")
 	end
 	call.trust = math.clamp(call.trust + res.interest_change, 0, 100)
 	call.busy = false

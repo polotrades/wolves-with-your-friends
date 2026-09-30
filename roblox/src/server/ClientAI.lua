@@ -77,43 +77,162 @@ local function clampReply(s: string): string
 	return s
 end
 
--- Used when the AI service is unavailable: simple lines that still follow the game rules.
-local function canned(call: Call, text: string)
+-- Backup lines for when the AI service is unavailable. Big pools, and a call never repeats a line.
+local LINES = {
+	cold = {
+		"Hmm. Who is this again?",
+		"How did you get this number?",
+		"Is this about my car's warranty? Because I don't have a car.",
+		"I'm very busy. I was about to watch paint dry.",
+		"You sound like a robot. Are you a robot?",
+		"My cousin warned me about people like you.",
+		"I'm putting you on speaker so my dog can judge you.",
+		"Make it quick, my soup is getting cold.",
+		"Wolf and what? Never heard of you.",
+		"Okay... you have ten seconds. Go.",
+	},
+	warm = {
+		"Okay, now you've got my attention.",
+		"Bananas on the moon? Go on...",
+		"Hmm, that's actually not the worst idea I've heard today.",
+		"Tell me more, I'm listening!",
+		"Wait, is the yacht shaped like a duck or a goose?",
+		"My neighbor has one of those. I hate my neighbor. Keep talking.",
+		"What's the catch? There's always a catch.",
+		"You're funny. I don't trust funny people. But keep going.",
+		"Hold on, let me get a pen. Okay, what?",
+		"Would The Chairman personally shake my hand?",
+	},
+	hot = {
+		"I love it! What do you need from me?",
+		"You're my favorite broker ever!",
+		"Take my money! Metaphorically. Well, also literally.",
+		"This is the best phone call of my entire life.",
+		"I'm telling everyone at bingo about you.",
+		"Where do I sign? Can I sign with a crayon?",
+		"Okay okay okay, I'm in. What's the next step?",
+		"You had me at 'moon bananas'.",
+		"My heart is racing. Is that the deal or my heart medicine?",
+		"Say the word and I'm a Wolf!",
+	},
+	greet = {
+		"Hello? Who's calling?",
+		"Yeah, hello? Speak up, I'm in a tunnel.",
+		"Hi there! Is this the pizza place?",
+		"Hello-o? This better be important.",
+	},
+	question = {
+		"Great question. I have no idea. Next question.",
+		"Why do you want to know? Suspicious...",
+		"Hmm, let me think... nope, you tell me.",
+		"Is that a trick question? It feels like a trick question.",
+	},
+	rude = {
+		"Excuse me?! I don't have to take this!",
+		"Wow. Rude. My grandma is more polite, and she bites.",
+		"Say that again and I'm hanging up.",
+	},
+}
+
+local function pick(call, pool: { string }): string
+	call.usedLines = call.usedLines or {}
+	local fresh = {}
+	for _, l in pool do
+		if not call.usedLines[l] then
+			table.insert(fresh, l)
+		end
+	end
+	if #fresh == 0 then
+		table.clear(call.usedLines)
+		fresh = pool
+	end
+	local line = fresh[math.random(1, #fresh)]
+	call.usedLines[line] = true
+	return line
+end
+
+local function canned(call, text: string)
 	local t = text:lower()
-	local delta = 4
+	local delta = 3
 	if #t > 60 then
 		delta += 3
 	end
-	if t:find("please") or t:find("thank") or t:find("amazing") or t:find("love") then
+	if t:find("please") or t:find("thank") or t:find("amazing") or t:find("love") or t:find("yacht") or t:find("moon") then
 		delta += 4
 	end
-	if t:find("stupid") or t:find("shut up") or t:find("idiot") then
+	local rude = t:find("stupid") or t:find("shut up") or t:find("idiot") or t:find("dumb")
+	if rude then
 		delta = -15
 	end
 	local asked
 	for _, d in Deals.list do
-		local key = d.secretLabel:lower()
-		if t:find(key) or (d.id == "account" and t:find("account")) or (d.id == "tradelink" and t:find("pin"))
+		if t:find(d.secretLabel:lower()) or (d.id == "account" and t:find("account")) or (d.id == "tradelink" and t:find("pin"))
 			or (d.id == "pennystock" and t:find("code")) then
 			asked = d
 			break
 		end
 	end
 	local newTrust = call.trust + delta
-	if asked and newTrust >= Config.REVEAL_TRUST then
+	if asked and not rude and newTrust >= Config.REVEAL_TRUST then
 		return { reply = string.format("Oh, fine! My %s is %s. Don't tell my cat.", asked.secretLabel, call.secrets[asked.id]),
 			interest_change = delta, hang_up = false }
-	elseif asked then
+	elseif asked and not rude then
 		return { reply = "Whoa there, I barely know you. Why should I give you that?", interest_change = delta - 3, hang_up = false }
 	end
-	local lines = newTrust < 30 and { "Hmm. Who is this again?", "I'm not sure about this, sonny.", "Is this about my car's warranty?" }
-		or newTrust < 60 and { "Okay, now you've got my attention.", "Bananas on the moon? Go on...", "Tell me more, I'm listening!" }
-		or { "I love it! What do you need from me?", "You're my favorite broker ever!", "Let's do it, I'm IN!" }
-	return { reply = lines[math.random(1, #lines)], interest_change = delta, hang_up = newTrust <= 0 }
+	local pool
+	if rude then
+		pool = LINES.rude
+	elseif #call.transcript <= 2 and (t:find("hello") or t:find("^hi") or t:find("hey")) then
+		pool = LINES.greet
+	elseif t:find("%?") and math.random() < 0.4 then
+		pool = LINES.question
+	elseif newTrust < 35 then
+		pool = LINES.cold
+	elseif newTrust < Config.REVEAL_TRUST then
+		pool = LINES.warm
+	else
+		pool = LINES.hot
+	end
+	return { reply = pick(call, pool), interest_change = delta, hang_up = newTrust <= 0, offline = true }
 end
 
--- Returns { reply: string, interest_change: number, hang_up: boolean }
-function ClientAI.respond(call: Call, speaker: string, text: string)
+-- Pull the JSON object out of a reply, even if the model wrapped it in extra words.
+local function parse(text: string)
+	local ok, data = pcall(HttpService.JSONDecode, HttpService, text)
+	if not (ok and type(data) == "table") then
+		local inner = text:match("%b{}")
+		if inner then
+			ok, data = pcall(HttpService.JSONDecode, HttpService, inner)
+		end
+	end
+	if ok and type(data) == "table" and type(data.reply) == "string" then
+		return data
+	end
+	return { reply = text, interest_change = 3, hang_up = false }
+end
+
+ClientAI.lastError = nil :: string?
+local schemaWorks = true -- flips off if Roblox rejects the JsonSchema option
+
+local function generate(call, prompt: string)
+	local request = {
+		UserPrompt = prompt,
+		ContextToken = call.contextToken,
+		MaxTokens = Config.AI_MAX_TOKENS,
+	}
+	if schemaWorks then
+		request.JsonSchema = SCHEMA
+	else
+		request.UserPrompt = prompt
+			.. '\n(Answer ONLY with JSON like {"reply":"...","interest_change":5,"hang_up":false})'
+	end
+	return pcall(function()
+		return (call.gen :: TextGenerator):GenerateTextAsync(request)
+	end)
+end
+
+-- Returns { reply: string, interest_change: number, hang_up: boolean, offline: boolean? }
+function ClientAI.respond(call, speaker: string, text: string)
 	local prompt = string.format("[Interest: %d/100] ", call.trust)
 	if call.pendingNote then
 		prompt ..= "[Note: " .. call.pendingNote .. "] "
@@ -123,27 +242,22 @@ function ClientAI.respond(call: Call, speaker: string, text: string)
 
 	local result
 	if call.gen then
-		local ok, response = pcall(function()
-			return (call.gen :: TextGenerator):GenerateTextAsync({
-				UserPrompt = prompt,
-				ContextToken = call.contextToken,
-				MaxTokens = Config.AI_MAX_TOKENS,
-				JsonSchema = SCHEMA,
-			})
-		end)
+		local ok, response = generate(call, prompt)
+		if not ok and schemaWorks then
+			warn("[ClientAI] request with JsonSchema failed, retrying without it:", response)
+			schemaWorks = false
+			ok, response = generate(call, prompt)
+		end
 		if ok and response and response.GeneratedText then
 			call.contextToken = response.ContextToken
-			local okJson, data = pcall(HttpService.JSONDecode, HttpService, response.GeneratedText)
-			if okJson and type(data) == "table" and type(data.reply) == "string" then
-				result = data
-			else
-				result = { reply = response.GeneratedText, interest_change = 3, hang_up = false }
-			end
+			result = parse(response.GeneratedText)
+			ClientAI.lastError = nil
 		else
-			warn("[ClientAI] TextGenerator failed, using canned lines:", response)
+			ClientAI.lastError = tostring(response)
+			warn("[ClientAI] TextGenerator failed, using backup lines:", response)
 		end
 	end
-	result = result or canned(call, text)
+	result = result or canned(call, speaker == "System" and "hello" or text)
 	result.reply = clampReply(tostring(result.reply))
 	result.interest_change = math.clamp(tonumber(result.interest_change) or 0, -20, 20)
 	result.hang_up = result.hang_up == true
