@@ -111,12 +111,10 @@ The owner prefers **quality over speed** and wants **models built in Blender fir
    - Upgrades (the reference game's, renamed): Account Access, Advanced Extractor, Stall Script, Smooth Talker,
      Better Script, VPN.
    - Your own monitor shows your desktop to passers-by.
-2. **Remote control of the caller's computer.** The caller must grant access. For now the server decides by
-   trust in `CallService.onRequestAccess`; move that decision to the AI. `RemoteApp.lua` already has the session
-   timer and the ended/denied states. Then:
-   - you see their own generated desktop and drive their cursor
-   - you open their bank, email, files and crypto, and move money out under a time limit
-   - they can pull access back if they get suspicious
+2. **Remote control of the caller's computer: dropped.** The planned mechanic was reading the caller's bank PIN,
+   security codes and crypto password and moving their money out. That is too close to a real remote-access scam
+   playbook, so it won't be built. The existing Request Access button and the Remote Access session shell from
+   step 1 stay as they are. A harmless replacement can be designed with the owner.
 3. **Physics.** Everything can be grabbed and thrown, with a throw key.
    - Trash bins take items in and spill them when thrown.
    - Coffee only pours into a cup, cups spill and leave puddles, and food can be eaten.
