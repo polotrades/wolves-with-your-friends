@@ -31,7 +31,7 @@ CEILING_STUFF = []  # hidden in the bird's-eye views
 _UNIT_CUBE = None
 # Everything placed at scene level is also recorded here and written to roblox/src/shared/OfficeLayout.lua,
 # so the Roblox office is built from exactly this layout (Blender meters, Z up; the game converts to studs).
-LAYOUT = {"parts": [], "props": [], "screens": [], "tickers": [], "signs": [], "lights": [], "chaos": [], "points": {}}
+LAYOUT = {"parts": [], "props": [], "screens": [], "tickers": [], "signs": [], "lights": [], "chaos": [], "points": {}, "boards": []}
 RECORD = [True]
 
 
@@ -460,6 +460,114 @@ place("FloorLamp", (15.0, -16.3, 0))
 place("Chandelier", (16.2, -3.2, 0.6), 0, ceiling=True)
 place("CashStack", (16.0, -2.8, 0.87), 0.4)
 
+# ---------------------------------------------------------------- wall boards: LED clock, office suspicion, day goal
+LED_RED = mat("LedRed", (1.0, 0.12, 0.08), 0.3, emit=5)
+BOARD_WHITE = mat("BoardWhite", (1, 1, 1), 0.3, emit=1.5)
+BOARD_GREEN = mat("BoardGreen", (0.3, 1.0, 0.45), 0.3, emit=3)
+BOARD_GOLD = mat("BoardGold", (1.0, 0.75, 0.2), 0.3, emit=3)
+BOARD_RED = mat("BoardRed", (0.25, 0.02, 0.04), 0.5)
+
+
+def board(kind, loc, rot, w, h):
+    """A live wall board (the game fills it in); here it gets a frame and sample text for the renders."""
+    LAYOUT["boards"].append({"kind": kind, "p": tuple(loc), "r": rot, "w": w, "h": h})
+    RECORD[0] = False
+    fwd = Vector((math.sin(rot), -math.cos(rot), 0))
+    right = Vector((math.cos(rot), math.sin(rot), 0))
+    base = Vector(loc)
+    cube("BoardFrame", 1, loc, (w + 0.1, 0.06, h + 0.1), MULLION, rot=(0, 0, rot), bevel=0.01)
+    cube("BoardScreen", 1, base + fwd * 0.032, (w, 0.005, h), BOARD_RED if kind == "goal" else SCREEN_BG,
+         rot=(0, 0, rot), bevel=0, outline=False)
+
+    def write(body, dx, dz, size, m):
+        pos = base + fwd * 0.04 + right * dx + Vector((0, 0, dz))
+        text("BoardText", body, tuple(pos), size, m, rot=(R(90), 0, rot), extrude=0.001)
+
+    if kind == "clock":
+        write("9:41 AM", 0, 0, h * 0.62, LED_RED)
+    elif kind == "suspicion":
+        write("OFFICE SUSPICION", -w * 0.2, h * 0.28, h * 0.16, BOARD_WHITE)
+        write("LOW", w * 0.36, h * 0.28, h * 0.2, BOARD_GREEN)
+        cube("SuspicionBar", 1, base + fwd * 0.037 + right * (-w * 0.38) + Vector((0, 0, -0.02)),
+             (w * 0.08, 0.004, h * 0.22), BOARD_GREEN, rot=(0, 0, rot), bevel=0, outline=False)
+        write("Keep it down. Bad things happen at 100%.", 0, -h * 0.32, h * 0.09, BOARD_WHITE)
+    elif kind == "goal":
+        write("TIME LEFT IN DAY  6:12", w * 0.18, h * 0.36, h * 0.1, BOARD_GOLD)
+        write("$0 OF $600", -w * 0.12, h * 0.1, h * 0.2, BOARD_GOLD)
+        write("GOAL NOT REACHED", -w * 0.2, -h * 0.1, h * 0.08, BOARD_WHITE)
+        write("DEPOSITED              RANK", 0, -h * 0.3, h * 0.08, BOARD_GOLD)
+    RECORD[0] = True
+
+
+board("goal", (-10.8, Y0 + 0.24, 2.1), math.pi, 3.2, 1.5)  # south wall, facing the trading floor
+board("clock", (-6.0, Y0 + 0.24, 2.75), math.pi, 1.2, 0.45)  # above the cork board
+for rot, off in ((0.0, -0.05), (math.pi, 0.05)):  # hanging over the runner, readable from both sides
+    board("suspicion", (-4.7, -0.85 + off, 2.75), rot, 2.6, 0.9)
+cube("SuspicionHanger", 1, (-5.9, -0.85, 3.4), (0.02, 0.02, 0.4), MULLION, bevel=0, outline=False)
+cube("SuspicionHanger", 1, (-3.5, -0.85, 3.4), (0.02, 0.02, 0.4), MULLION, bevel=0, outline=False)
+board("clock", (-15.3, 3.0, 2.8), R(-90), 1.0, 0.38)  # lobby, on the feature wall next to the letters
+
+# ---------------------------------------------------------------- extra decor
+# lobby: art between the elevators, planters by reception, reading lamps
+for y in (-2.5, 2.5):
+    place(rng.choice(["PaintingBull", "PaintingAbstract", "PaintingSunset"]), (X0 + 0.18, y, 1.0), R(90))
+for y in (-2.2, 2.2):
+    place("BambooPlanter", (-16.3, y, 0), R(-90))
+place("FloorLamp", (-21.3, 14.0, 0))
+place("Bonsai", (-20.0, 13.2, 0.44), 0.5)
+place("PlantFiddle", (-15.8, 9.6, 0))
+place("WallClock", (-19.6, Y1 - 0.12, 0.2), math.pi)
+# along the glass offices: plants and a bench-style sofa between doors
+for x in (-8.9, -3.4, 2.1):
+    place("PlantFiddle", (x, 9.8, 0), rng.uniform(0, 6.28))
+place("Sofa", (-5.0, 9.4, 0), 0.0, 0.9)
+place("SideTable", (-3.6, 9.5, 0))
+place("MagazineRack", (0.4, 10.1, 0), math.pi)
+# trading floor: planters at the pod ends, a sales whiteboard, a money counter by the rigs
+for pod_y in PODS:
+    place("PlantPalm", (5.9, pod_y, 0), rng.uniform(0, 6.28))
+place("Whiteboard", (-13.9, -9.3, 0), R(30))
+place("MoneyCounter", (8.6, -6.2, 0.76), R(-90))
+place("MoneyGun", (8.5, -1.5, 0.76), R(-100))
+place("GoldBars", (8.6, 3.3, 0.76), R(-90))
+place("FireExtinguisher", (12.1, -9.2, 0), R(-90))
+place("SecurityCamera", (12.0, 9.5, 0.9), R(-135), ceiling=True)
+place("SecurityCamera", (-13.8, -9.6, 0.9), R(45), ceiling=True)
+# chairman: rug, globe, chandelier, money counter
+place("PersianRug", (-11.0, 13.4, 0), 0.0, 0.8)
+place("SideTable", (-13.8, 11.2, 0))
+place("DeskGlobe", (-13.8, 11.2, 0.62))
+place("MoneyCounter", (-10.2, 14.1, 0.79), math.pi)
+place("Chandelier", (-11.0, 13.8, 0.6), 0, ceiling=True)
+place("GoldPiggyBank", (-12.0, 14.4, 0.79), math.pi)
+# meeting room: pendant lamps over the table, a plant, water
+for x in (6.9, 9.1):
+    place("PendantLamp", (x, 13.8, 0.7), 0, ceiling=True)
+place("WaterCooler", (11.8, 11.0, 0), R(-90))
+place("BambooPlanter", (4.4, 16.4, 0), math.pi)
+# cafeteria: news TV, water cooler, plants, fruit on the counter
+place("WallTV", (12.6, 6.0, 0.2), R(90))  # cafe side of the divider wall
+place("WaterCooler", (23.4, 10.6, 0), R(-90))
+place("PlantPalm", (13.2, 9.9, 0))
+place("PlantSnake", (19.6, 1.5, 0))
+place("FruitBowl", (17.3, 16.0, 0.94))
+place("Donut", (19.0, 15.6, 0.94))
+# game lounge: rug under the bean bags, TV over the arcades, lamp + juice by the massage chairs
+place("PersianRug", (20.4, -12.3, 0), R(90), 0.7)
+place("SideTable", (13.4, -14.2, 0))
+place("JuiceBarCart", (15.8, -11.8, 0), R(90))
+place("HangingPlant", (14.0, -7.0, 0.4), 0, ceiling=True)
+place("HangingPlant", (23.0, -5.5, 0.4), 0, ceiling=True)
+# restrooms: plants, bins, a wet floor
+for x in (-23.4, -15.6):
+    place("PlantSnake", (x, -10.5, 0))
+    place("TrashBin", (x + (0.8 if x < -20 else -0.8), -10.4, 0))
+place("CoffeePuddle", (-21.5, -12.8, 0), 0.5)
+# print strip: a second cork board, a coat rack, boxes
+place("CoatRack", (-12.0, -12.2, 0))
+place("CardboardBox", (-2.5, -15.0, 0), 1.2)
+place("CardboardBox", (-2.3, -15.0, 0.4), 0.3)
+
 # ---------------------------------------------------------------- chaos: papers, cash, cups and food on the trading floor
 RECORD[0] = False  # the game scatters its own draggable paper and cash in these areas
 for y in (-5.35, -0.85, 3.65):
@@ -555,6 +663,10 @@ def write_layout():
     out.append("\tmeetingSeats = {")
     for st in LAYOUT["meetingSeats"]:
         out.append("\t\t{ p = %s, r = %.4f }," % (v3(st["p"]), st["r"]))
+    out.append("\t},")
+    out.append("\tboards = {")
+    for bd in LAYOUT["boards"]:
+        out.append('\t\t{ kind = "%s", p = %s, r = %.4f, w = %.2f, h = %.2f },' % (bd["kind"], v3(bd["p"]), bd["r"], bd["w"], bd["h"]))
     out.append("\t},")
     out.append("\tpoints = {")
     for k, pt in LAYOUT["points"].items():

@@ -239,6 +239,25 @@ local function buildScreensAndSigns(folder: Folder)
 	end
 end
 
+-- Live wall boards (LED clock, office suspicion, day goal). The client draws and updates them (OfficeBoards).
+local function buildBoards(folder: Folder)
+	for _, b in Layout.boards do
+		local dir = ArtLibrary.facing(b.r)
+		local frame = panel(folder, "BoardFrame", ArtLibrary.pos(b.p), dir, Vector3.new((b.w + 0.1) * S, (b.h + 0.1) * S, 0.15),
+			Color3.fromRGB(14, 14, 16))
+		frame.Material = Enum.Material.Metal
+		frame.CanCollide = false
+		local screen = panel(folder, "OfficeBoard", ArtLibrary.pos(b.p) + dir * 0.09, dir, Vector3.new(b.w * S, b.h * S, 0.02),
+			Color3.new())
+		screen.Transparency = 1
+		screen.CanCollide = false
+		local g = surfaceGui(screen, 40)
+		g.Name = "Board"
+		screen:SetAttribute("Kind", b.kind)
+		screen:AddTag("OfficeBoard")
+	end
+end
+
 -- ---------------------------------------------------------------- elevators
 -- Sliding gold doors in the west core wall with a car behind each. Players spawn in the middle car, doors open.
 -- In a prop frame the office is in front (Roblox local +Z) and the car is behind (local -Z).
@@ -558,6 +577,7 @@ function OfficeBuilder.build()
 	buildParts(folder)
 	buildCity(city)
 	buildScreensAndSigns(folder)
+	buildBoards(folder)
 	buildProps(folder, office)
 	office.conference = buildConference(folder)
 
