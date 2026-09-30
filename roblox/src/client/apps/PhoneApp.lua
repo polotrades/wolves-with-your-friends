@@ -111,12 +111,14 @@ local function build(call)
 	refs.waiting = UI.text(card, "MESSAGE SENT - WAITING", { Size = UDim2.new(1, 0, 0, 20), Position = UDim2.new(0, 0, 1, -44),
 		TextColor3 = UI.colors.yellow, Visible = false })
 
-	refs.list = UI.new("ScrollingFrame", { Size = UDim2.new(1, 0, 1, -380), Position = UDim2.fromOffset(0, 256),
+	refs.list = UI.new("ScrollingFrame", { Size = UDim2.new(1, 0, 1, -400), Position = UDim2.fromOffset(0, 256),
 		BackgroundColor3 = UI.colors.bg, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		ScrollBarThickness = 6, BorderSizePixel = 0, Parent = c })
 	UI.pad(refs.list, 6)
 	UI.new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = refs.list })
 
+	refs.micStatus = UI.text(c, "", { Size = UDim2.new(1, 0, 0, 18), Position = UDim2.new(0, 0, 1, -140),
+		TextColor3 = UI.colors.yellow, Font = UI.bold })
 	refs.input = UI.new("TextBox", { Size = UDim2.new(1, 0, 0, 40), Position = UDim2.new(0, 0, 1, -116),
 		BackgroundColor3 = UI.colors.bg, TextColor3 = UI.colors.text, PlaceholderText = "Talk (mic) or type here, Enter to send",
 		Font = UI.body, TextSize = 18, ClearTextOnFocus = false, Text = "", Parent = c })
@@ -147,6 +149,7 @@ local function build(call)
 
 	-- waveform: bounces while the client talks or thinks
 	refs.waveConn = RunService.RenderStepped:Connect(function()
+		refs.micStatus.Text = Voice.micStatus()
 		local active = Voice.isSpeaking() or refs.waiting.Visible
 		local t = os.clock()
 		for i, b in refs.waveBars do

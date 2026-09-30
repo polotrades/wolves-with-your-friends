@@ -41,13 +41,19 @@ function Voice.init()
 		tts = nil
 	end
 	local okMic, errMic = pcall(function()
-		local input = Instance.new("AudioDeviceInput")
-		input.Player = Players.LocalPlayer
-		input.Parent = Players.LocalPlayer
+		local player = Players.LocalPlayer
+		-- Prefer the mic Roblox already made for this player (default voice chat); otherwise make our own.
+		local input = player:FindFirstChildOfClass("AudioDeviceInput")
+		if not input then
+			local made = Instance.new("AudioDeviceInput")
+			made.Player = player
+			made.Parent = SoundService
+			input = made
+		end
 		local transcriber = Instance.new("AudioSpeechToText")
 		transcriber.Enabled = false
-		transcriber.Parent = Players.LocalPlayer
-		wire(input, transcriber)
+		transcriber.Parent = SoundService
+		wire(input :: Instance, transcriber)
 		transcriber:GetPropertyChangedSignal("Text"):Connect(function()
 			local text = transcriber.Text
 			if text == "" then
@@ -60,6 +66,13 @@ function Voice.init()
 			transcriber.Text = ""
 		end)
 		mic, stt = input, transcriber
+		-- if Roblox swaps in its own mic later, follow it
+		player.ChildAdded:Connect(function(child)
+			if child:IsA("AudioDeviceInput") and child ~= mic then
+				wire(child, transcriber)
+				mic = child
+			end
+		end)
 	end)
 	Voice.micAvailable = okMic
 	if not okMic then
@@ -67,11 +80,35 @@ function Voice.init()
 	end
 end
 
+-- What the Phone app shows under the mic button, so players can see why they aren't heard.
+function Voice.micStatus(): string
+	if not Voice.micAvailable then
+		return "Mic unavailable here - type instead"
+	end
+	if not Voice.micOn then
+		return "Mic off - click MIC to talk"
+	end
+	local input = mic :: AudioDeviceInput?
+	if input and not input.Active then
+		return "Unmute the Roblox mic icon at the top of the screen"
+	end
+	if stt and stt.VoiceDetected then
+		return "Hearing you..."
+	end
+	return "Listening - talk now"
+end
+
 function Voice.setMic(on: boolean)
 	Voice.micOn = on and Voice.micAvailable
 	if stt then
 		stt.Enabled = Voice.micOn
 	end
+	if mic and Voice.micOn then
+		pcall(function()
+			(mic :: AudioDeviceInput).Muted = false
+		end)
+	end
+	print("[Voice] mic", Voice.micOn and "on" or "off", mic and ("active=" .. tostring((mic :: AudioDeviceInput).Active)) or "")
 	return Voice.micOn
 end
 
