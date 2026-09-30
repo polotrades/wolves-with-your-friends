@@ -1,67 +1,19 @@
--- Office NPCs turn toward ringing desks and shout directions; The Chairman makes speeches.
+-- No NPCs in the tower: only players. Ringing desks are announced to every player's HUD
+-- (a screen-edge arrow points at the phone), and The Chairman speaks through a banner on everyone's screen.
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Net = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Net"))
+
 local NPCGuide = {}
 
-local npcs
+function NPCGuide.init(_office) end
 
-local RECEPTIONIST = {
-	"Desk %d is ringing! MOVE IT!",
-	"Ooh, Desk %d! I heard this one is loaded...",
-	"Phone on Desk %d, sweetie! Chop chop!",
-	"Desk %d! Don't tell anyone I told you.",
-}
-local GUARD = {
-	"W-w-was that a phone?! Desk %d!",
-	"AAH! Desk %d is ringing! I'm not scared!",
-	"Desk %d... somebody get it before it gets ME!",
-}
-
-function NPCGuide.init(o)
-	npcs = o.npcs
-end
-
-function NPCGuide.say(model: Model, text: string, seconds: number?)
-	local head = model:FindFirstChild("Head")
-	local bubble = head and head:FindFirstChild("Bubble") :: BillboardGui?
-	if not bubble then
-		return
-	end
-	local label = bubble:FindFirstChildWhichIsA("Frame"):FindFirstChild("Text") :: TextLabel
-	label.Text = text
-	bubble.Enabled = true
-	local token = {}
-	bubble:SetAttribute("Token", tostring(token))
-	task.delay(seconds or 4, function()
-		if bubble:GetAttribute("Token") == tostring(token) then
-			bubble.Enabled = false
-		end
-	end)
-end
-
-local function face(model: Model, target: Vector3)
-	local pivot = model:GetPivot()
-	local flat = Vector3.new(target.X, pivot.Position.Y, target.Z)
-	if (flat - pivot.Position).Magnitude > 0.1 then
-		model:PivotTo(CFrame.lookAt(pivot.Position, flat))
-	end
-end
-
-function NPCGuide.announce(desk)
-	if not npcs then
-		return
-	end
-	local pos = desk.monitor.Position
-	face(npcs.receptionist, pos)
-	NPCGuide.say(npcs.receptionist, string.format(RECEPTIONIST[math.random(#RECEPTIONIST)], desk.id))
-	if math.random() < 0.5 then
-		face(npcs.guard, pos)
-		NPCGuide.say(npcs.guard, string.format(GUARD[math.random(#GUARD)], desk.id))
-	end
+-- desk started (on = true) or stopped (on = false) ringing
+function NPCGuide.announce(desk, on: boolean?)
+	Net.Ring:FireAllClients(desk.id, desk.monitor.Position, on ~= false)
 end
 
 function NPCGuide.chairman(text: string, seconds: number?)
-	if npcs then
-		NPCGuide.say(npcs.chairman, text, seconds or 6)
-	end
+	Net.Chairman:FireAllClients(text, seconds or 6)
 end
 
 return NPCGuide

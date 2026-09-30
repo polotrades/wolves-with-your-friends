@@ -42,6 +42,9 @@ local function filter(player: Player, text: string): string?
 end
 
 local function setRinging(desk, on: boolean)
+	if not on and desk.ringTag.Enabled then
+		NPCGuide.announce(desk, false)
+	end
 	desk.lamp.Color = on and Color3.fromRGB(255, 40, 40) or Color3.fromRGB(80, 80, 80)
 	desk.light.Enabled = on
 	desk.ringTag.Enabled = on

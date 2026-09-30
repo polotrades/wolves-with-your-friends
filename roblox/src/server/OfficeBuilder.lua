@@ -353,6 +353,7 @@ local function buildDesk(folder: Folder, id: number, cf: CFrame)
 	-- screen that everyone walking past can read
 	local gui = surfaceGui(monitor, 60)
 	gui.Name = "Mirror"
+	monitor:AddTag("DeskScreen") -- the client draws a live trading screen here while nobody is on a call
 	local bg = Instance.new("Frame")
 	bg.Size = UDim2.fromScale(1, 1)
 	bg.BackgroundColor3 = Color3.fromRGB(20, 30, 60)
