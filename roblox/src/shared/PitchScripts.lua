@@ -100,7 +100,7 @@ function PitchScripts.suggest(opts): { string }
 	local rng = Random.new()
 	local pool: { string } = {}
 	local function add(list: { string }?)
-		for _, l in list or {} do
+		for _, l in (list or {}) :: { string } do
 			table.insert(pool, l)
 		end
 	end

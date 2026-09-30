@@ -28,7 +28,9 @@ local NAMES = {
 	"RequestAccess", -- player -> server: ask the caller for remote access to their computer
 	"RemoteAccess", -- server -> player: { state = "granted" | "denied" | "ended", name, seconds }
 	"PumpAds", -- player -> server: (stockIndex, budget) launch an ad campaign
-	"PumpResult", -- server -> player: { stock, spent, returned }
+	"PumpResult", -- server -> player: { started?, stock, spent, returned }
+	"Casino", -- player -> server: (action, amount?, choice?) wallet | deposit | cashout | updown | slots
+	"CasinoResult", -- server -> player: { wallet, game?, win?, bet?, up?, reels?, error?, note? }
 }
 
 local Net = {}

@@ -64,18 +64,37 @@ The owner prefers **quality over speed** and wants **models built in Blender fir
 - Live idle screens and wall boards.
 - Usernames hidden.
 - Rings show a yellow outline and a countdown with **no arrows**, and any computer can be used.
-
-## In progress: step 1 (work in progress, source does not run yet)
-Written: new `Window.lua` (min/max/close, drag, snap, resize; `Window.new(host, opts)`, a new signature),
-`State.lua`, `FileSystem.lua`, `Wallpapers.lua`, `Avatar.lua`, `shared/Catalog.lua` (Shark Mart), the new remotes in
-`Net.lua`, the Card Verify deal, caller looks/traits in `Clients.lua`, and `PitchScripts.suggest`.
-Still to write: the `Desktop.lua` rewrite (start menu, taskbar, info, notifications, `Desktop.window(appId, ...)`),
-the updated callers of the new Window API (Phone, Deal, Script apps), the new apps, `DeskMirror.lua`, and the server
-side (`Shop.lua`, Request Access, upgrade effects, PumpAds, bank, DeskState relay).
-`WolvesWithYourFriends.rbxl` has NOT been rebuilt from this source; it is still the last working build.
+- **Step 1, the Windows-style Shark OS** (not yet tested in Studio):
+  - `Window.lua`: min/max/close, drag, snap to the left/right half or top, double-click to maximize, resize grip.
+    Apps open windows through `Desktop.window(appId, title, size, pos?, resizable?)`.
+  - `Desktop.lua`: wallpaper, desktop icons (double-click; files in `FileSystem.desktop` also show), right-click
+    menu, start menu with search and Leave Desk, and a taskbar with Start, pinned apps, running apps, the objective,
+    PERSONAL / TEAM / QUOTA / REVIEW timer, the clock and day, notifications and a show-desktop sliver.
+  - Shared client state is in `State.lua`, files in `FileSystem.lua`, wallpapers in `Wallpapers.lua` (3 premium),
+    caller portraits in `Avatar.lua` and photos in `Photo.lua`.
+  - Apps in `client/apps`: Phone (avatar, personality line, trust number and label, bubbles, 3 suggested replies
+    from `PitchScripts.suggest`, Request Access / Hang Up / speaker / mic, and a "No call at this desk" screen),
+    Script, the deal apps (Account Opener, TradeLink, Penny Stock, **Card Verify**), Files, Notes, Browser (6 fake
+    sites), Shark Mart (Upgrades / Store / Employees / Bank), Camera (live webcam copy of your character, 4 filters,
+    SNAP to Photos), Remote Access (session shell), Backgrounds, Shark Shield antivirus, PumpAds (+ pop-up adware)
+    and **Wolf Casino**, which replaced the minigame at the owner's request.
+    - Wolf Casino: deposit Personal money into a wallet, then play Up or Down (1.9×) or Stock Slots, and cash out.
+      The server rolls every result. It uses in-game money only, never Robux, and winnings don't count toward the
+      firm's target. The owner should answer the "gambling" questions in the experience's maturity questionnaire.
+  - `DeskMirror.lua`: the server copies each player's compact desktop state to their monitor's `DeskState`
+    attribute, and every client draws it on that monitor (`IdleScreens` steps aside).
+  - Server:
+    - `Shop.lua`: buying, the bank deposit to the firm, employees paid every 20 s of the workday, and PumpAds.
+    - `Casino.lua`: the casino wallet and games.
+    - `Economy.spend/deposit`, and a `note` on Money events for the bank history.
+    - `CallService`:
+      - desk tracking, `DeskState` / `LeaveDesk`, and Request Access (70 trust, or 50 with Account Access; 60 s
+        sessions, or 90 s with the VPN)
+      - upgrade effects: Lucky Tie, Smooth Talker, Stall Script, Advanced Extractor, and the VPN's no trust loss
+        on a refused request
 
 ## Still to do (in this order)
-1. **Windows-style computer (big).** Shark OS should look like a real Windows-like desktop with no Microsoft
+1. ~~**Windows-style computer (big).**~~ Done (see above); the list below is kept for reference. Shark OS should look like a real Windows-like desktop with no Microsoft
    branding:
    - Desktop: start menu, taskbar with pinned apps and a tray clock, windows with min/max/close, drag and snap,
      wallpapers plus a Backgrounds app, and a file explorer (the Files app with folders and openable documents).
@@ -92,7 +111,9 @@ side (`Shop.lua`, Request Access, upgrade effects, PumpAds, bank, DeskState rela
    - Upgrades (the reference game's, renamed): Account Access, Advanced Extractor, Stall Script, Smooth Talker,
      Better Script, VPN.
    - Your own monitor shows your desktop to passers-by.
-2. **Remote control of the caller's computer.** The caller must grant access (the AI decides). Then:
+2. **Remote control of the caller's computer.** The caller must grant access. For now the server decides by
+   trust in `CallService.onRequestAccess`; move that decision to the AI. `RemoteApp.lua` already has the session
+   timer and the ended/denied states. Then:
    - you see their own generated desktop and drive their cursor
    - you open their bank, email, files and crypto, and move money out under a time limit
    - they can pull access back if they get suspicious

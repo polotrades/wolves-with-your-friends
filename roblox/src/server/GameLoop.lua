@@ -9,6 +9,8 @@ local Net = require(Shared:WaitForChild("Net"))
 local Economy = require(script.Parent:WaitForChild("Economy"))
 local CallService = require(script.Parent:WaitForChild("CallService"))
 local NPCGuide = require(script.Parent:WaitForChild("NPCGuide"))
+local Shop = require(script.Parent:WaitForChild("Shop"))
+local Casino = require(script.Parent:WaitForChild("Casino"))
 
 local GameLoop = {}
 
@@ -217,6 +219,7 @@ function GameLoop.run(o)
 			while true do
 				Economy.startDay()
 				CallService.startDay()
+				Shop.setWorking(true)
 				state = "DAY"
 				NPCGuide.chairman(HYPE[math.random(#HYPE)], 6)
 				countdown(Config.DAY_LENGTH, function(t)
@@ -225,6 +228,7 @@ function GameLoop.run(o)
 					end
 				end)
 				CallService.stopAll()
+				Shop.setWorking(false)
 				if #Players:GetPlayers() == 0 then
 					break
 				end
@@ -236,6 +240,8 @@ function GameLoop.run(o)
 				teleportAll({ office.lobby })
 			end
 			Economy.resetRun()
+			Shop.resetRun()
+			Casino.resetRun()
 			teleportAll({ office.lobby })
 		end
 	end)

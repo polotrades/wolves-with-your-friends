@@ -3,8 +3,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Client = script.Parent.Parent
 local UI = require(Client:WaitForChild("UI"))
-local Window = require(Client:WaitForChild("Window"))
 local Desktop = require(Client:WaitForChild("Desktop"))
+local State = require(Client:WaitForChild("State"))
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Net = require(Shared:WaitForChild("Net"))
 local Deals = require(Shared:WaitForChild("Deals"))
@@ -18,14 +18,9 @@ function DealApp.open(dealId: string)
 		open[dealId].win:setMinimized(false)
 		return
 	end
-	local n = 0
-	for _ in open do
-		n += 1
-	end
-	local win = Window.new(Desktop.host(), deal.app, deal.color, UDim2.fromOffset(520, 300),
-		UDim2.fromOffset(250 + n * 30, 20 + n * 30))
-	Desktop.trackWindow(win, deal.app, deal.color)
+	local win = Desktop.window(dealId, deal.app, Vector2.new(520, 300))
 	local c = win.content
+	UI.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = UI.os.surface, BorderSizePixel = 0, Parent = c })
 	UI.pad(c, 14)
 	local head = UI.new("Frame", { Size = UDim2.new(1, 0, 0, 64), BackgroundColor3 = Color3.fromRGB(245, 245, 250), Parent = c })
 	UI.corner(head)
@@ -51,17 +46,16 @@ function DealApp.open(dealId: string)
 			Net.Verify:FireServer(dealId, box.Text)
 		end)
 	open[dealId] = { win = win, msg = msg, box = box, verify = verify }
-	win.onClose = (function(prev)
-		return function()
-			open[dealId] = nil
-			if prev then
-				prev()
-			end
-		end
-	end)(win.onClose)
+	win:addCloseHandler(function()
+		open[dealId] = nil
+	end)
 end
 
 function DealApp.result(dealId: string, ok: boolean, message: string, payout: number?)
+	if ok then
+		State.claimed[dealId] = true
+		State.emit()
+	end
 	local w = open[dealId]
 	if w then
 		w.msg.Text = message

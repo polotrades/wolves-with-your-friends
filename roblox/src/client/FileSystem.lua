@@ -155,7 +155,7 @@ end
 -- a name that isn't taken yet in a folder ("Note 3.txt")
 function FileSystem.uniqueName(parent: Item, base: string, ext: string): string
 	local taken = {}
-	for _, c in parent.children or {} do
+	for _, c in (parent.children or {}) :: { Item } do
 		taken[c.name] = true
 	end
 	local n = 1

@@ -21,11 +21,12 @@ function Economy.quota(): number
 	return Config.quotaFor(Economy.day)
 end
 
-function Economy.sendPersonal(player: Player)
-	Net.Money:FireClient(player, { personal = Economy.personal[player] or 0 })
+-- note = what the money was for, shown in the Shark Mart bank history
+function Economy.sendPersonal(player: Player, note: string?)
+	Net.Money:FireClient(player, { personal = Economy.personal[player] or 0, note = note })
 end
 
-function Economy.add(player: Player, amount: number, toTeam: boolean?)
+function Economy.add(player: Player, amount: number, toTeam: boolean?, note: string?)
 	Economy.personal[player] = (Economy.personal[player] or 0) + amount
 	if toTeam ~= false then
 		Economy.team += amount
@@ -35,7 +36,29 @@ function Economy.add(player: Player, amount: number, toTeam: boolean?)
 			Economy.biggestDeal = { amount = amount, name = player.DisplayName }
 		end
 	end
-	Economy.sendPersonal(player)
+	Economy.sendPersonal(player, note)
+end
+
+-- takes Personal money if the player has enough
+function Economy.spend(player: Player, amount: number, note: string?): boolean
+	amount = math.floor(amount)
+	local have = Economy.personal[player] or 0
+	if amount <= 0 or have < amount then
+		return false
+	end
+	Economy.personal[player] = have - amount
+	Economy.sendPersonal(player, note)
+	return true
+end
+
+-- Personal money moved into the firm (counts toward today's target)
+function Economy.deposit(player: Player, amount: number): boolean
+	if not Economy.spend(player, amount, "Deposit to the firm") then
+		return false
+	end
+	Economy.team += math.floor(amount)
+	Economy.haul += math.floor(amount)
+	return true
 end
 
 function Economy.countCall(player: Player)

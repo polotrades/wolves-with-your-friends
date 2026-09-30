@@ -13,6 +13,7 @@ local Net = require(Shared:WaitForChild("Net"))
 local ClientAI = require(script.Parent:WaitForChild("ClientAI"))
 local Economy = require(script.Parent:WaitForChild("Economy"))
 local NPCGuide = require(script.Parent:WaitForChild("NPCGuide"))
+local Shop = require(script.Parent:WaitForChild("Shop"))
 
 local CallService = {}
 
@@ -21,6 +22,8 @@ local activeCalls: { [Player]: any } = {}
 local running = false
 local quotes = {} -- lines players said today, for Deal Replay
 local lastSay: { [Player]: number } = {}
+local usingDesk: { [Player]: any } = {} -- the desk whose computer each player is sitting at
+local lastDeskState: { [Player]: number } = {}
 local rng = Random.new()
 
 local function mood(trust: number): string
@@ -103,7 +106,10 @@ end
 
 local function publicCall(call)
 	local p = call.profile
+	local look = Clients.look(p)
 	return {
+		look = look,
+		access = call.access == true,
 		desk = call.desk.id,
 		name = Clients.displayName(p),
 		kind = p.kind,
@@ -194,11 +200,42 @@ local function spawnCall()
 	ringAt(free[rng:NextInteger(1, #free)], { profile = Clients.random(rng), secrets = secrets, jumps = 0 })
 end
 
+-- the monitor mirror: which desk a player is at, and a copy of their desktop for passers-by
+local function leaveDesk(player: Player)
+	local desk = usingDesk[player]
+	if desk then
+		usingDesk[player] = nil
+		desk.monitor:SetAttribute("DeskState", nil)
+		desk.monitor:SetAttribute("DeskUser", nil)
+	end
+end
+
 local function seat(player: Player, desk)
+	leaveDesk(player)
+	for other, d in usingDesk do
+		if d == desk and other ~= player then
+			leaveDesk(other)
+		end
+	end
+	usingDesk[player] = desk
+	desk.monitor:SetAttribute("DeskUser", player.DisplayName)
 	local char = player.Character
 	if char then
 		char:PivotTo(desk.seatCFrame)
 	end
+end
+
+local function onDeskState(player: Player, state: any)
+	local desk = usingDesk[player]
+	if not desk or type(state) ~= "string" or #state > 2000 then
+		return
+	end
+	local now = os.clock()
+	if lastDeskState[player] and now - lastDeskState[player] < 0.15 then
+		return
+	end
+	lastDeskState[player] = now
+	desk.monitor:SetAttribute("DeskState", state)
 end
 
 function CallService.endCall(call, reason: string)
@@ -215,6 +252,9 @@ function CallService.endCall(call, reason: string)
 	desk.use.Enabled = true
 	updateMirror(desk)
 	if call.operator.Parent then
+		if call.access then
+			Net.RemoteAccess:FireClient(call.operator, { state = "ended" })
+		end
 		Net.CallClosed:FireClient(call.operator, { reason = reason })
 	end
 end
@@ -229,7 +269,7 @@ function CallService.answer(player: Player, desk)
 	local call = {
 		profile = pending.profile,
 		secrets = pending.secrets,
-		trust = Config.START_TRUST,
+		trust = Config.START_TRUST + (Shop.has(player, "luckytie") and 5 or 0),
 		operator = player,
 		desk = desk,
 		transcript = {},
@@ -266,6 +306,11 @@ function CallService.takeover(player: Player, desk)
 	end
 	local old = call.operator
 	activeCalls[old] = nil
+	leaveDesk(old)
+	if call.access then
+		call.access = false
+		Net.RemoteAccess:FireClient(old, { state = "ended" })
+	end
 	Net.CallClosed:FireClient(old, { reason = "taken", by = player.DisplayName })
 	Net.Toast:FireClient(old, player.DisplayName .. " took over your call!")
 	local oldChar = old.Character
@@ -313,9 +358,20 @@ local function onSay(player: Player, text: any)
 		call.warnedOffline = true
 		Net.Toast:FireClient(player, "AI clients offline - using backup lines. Check Output for [ClientAI].")
 	end
-	call.trust = math.clamp(call.trust + res.interest_change, 0, 100)
+	local change = res.interest_change
+	if change > 0 and Shop.has(player, "smooth") then
+		change += 3 -- Smooth Talker
+	end
+	call.trust = math.clamp(call.trust + change, 0, 100)
 	call.busy = false
 	addLine(call, "client", call.profile.name, res.reply)
+	if res.hang_up and Shop.has(player, "stall") and not call.stalled then
+		-- Stall Script: one more chance per call
+		call.stalled = true
+		res.hang_up = false
+		call.trust = math.max(call.trust, 12)
+		addLine(call, "client", call.profile.name, "...Wait. Fine. You get ONE more chance. Make it good.")
+	end
 	if res.hang_up then
 		task.delay(2.5, function()
 			CallService.endCall(call, "hung up")
@@ -339,10 +395,55 @@ local function onVerify(player: Player, dealId: any, value: any)
 	end
 	if Deals.normalize(value) == Deals.normalize(call.secrets[dealId]) then
 		call.claimed[dealId] = true
-		Economy.add(player, deal.payout)
-		Net.VerifyResult:FireClient(player, dealId, true, string.format("Deal closed - $%d earned.", deal.payout), deal.payout)
+		local payout = deal.payout
+		if Shop.has(player, "extractor") then
+			payout = math.floor(payout * 1.25) -- Advanced Extractor
+		end
+		Economy.add(player, payout, true, deal.app .. " deal")
+		Net.VerifyResult:FireClient(player, dealId, true, string.format("Deal closed - $%d earned.", payout), payout)
 	else
 		Net.VerifyResult:FireClient(player, dealId, false, "Verification failed. Wrong code.")
+	end
+end
+
+-- Request Access: the broker asks the caller to click "Allow" on a remote-access box. Callers who trust you enough
+-- say yes (the full remote desktop is HANDOFF step 2).
+local GRANT_LINES = {
+	"Okay... I clicked the little 'Allow' button. Is my screen supposed to blink like that?",
+	"Fine, fine, I clicked it. Don't look at my desktop, it's messy.",
+	"Allowed! Ooh, my mouse is moving by itself. Spooky!",
+}
+local REFUSE_LINES = {
+	"Access to MY computer? Absolutely not. We just met!",
+	"Whoa, whoa. My nephew said never to click those. Earn it first.",
+	"Hmm, no. That sounds like something a robot would ask.",
+}
+
+local function onRequestAccess(player: Player)
+	local call = activeCalls[player]
+	if not call or call.busy or call.access or call.closed then
+		return
+	end
+	local need = Shop.has(player, "access") and 50 or 70
+	call.busy = true
+	addLine(call, "player", player.DisplayName,
+		"Could you click 'Allow' on the little box that just popped up? It's just so I can set everything up for you.")
+	task.wait(1.2)
+	if call.closed or call.operator ~= player then
+		return
+	end
+	call.busy = false
+	local name = Clients.displayName(call.profile)
+	if call.trust >= need then
+		call.access = true
+		addLine(call, "client", call.profile.name, GRANT_LINES[rng:NextInteger(1, #GRANT_LINES)])
+		Net.RemoteAccess:FireClient(player, { state = "granted", name = name, seconds = Shop.has(player, "vpn") and 90 or 60 })
+	else
+		if not Shop.has(player, "vpn") then
+			call.trust = math.max(0, call.trust - 8)
+		end
+		addLine(call, "client", call.profile.name, REFUSE_LINES[rng:NextInteger(1, #REFUSE_LINES)])
+		Net.RemoteAccess:FireClient(player, { state = "denied", need = need })
 	end
 end
 
@@ -372,6 +473,9 @@ function CallService.init(office)
 		end)
 	end
 	Net.Say.OnServerEvent:Connect(onSay)
+	Net.RequestAccess.OnServerEvent:Connect(onRequestAccess)
+	Net.DeskState.OnServerEvent:Connect(onDeskState)
+	Net.LeaveDesk.OnServerEvent:Connect(leaveDesk)
 	Net.Verify.OnServerEvent:Connect(onVerify)
 	Net.HangUp.OnServerEvent:Connect(function(player)
 		local call = activeCalls[player]
@@ -385,6 +489,8 @@ function CallService.init(office)
 			CallService.endCall(call, "left")
 		end
 		lastSay[player] = nil
+		lastDeskState[player] = nil
+		leaveDesk(player)
 	end)
 end
 

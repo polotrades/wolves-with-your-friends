@@ -76,12 +76,6 @@ function Window.new(host: GuiObject, opts: Options)
 	UI.corner(frame, 8)
 	self.stroke = UI.new("UIStroke", { Color = UI.os.border, Thickness = 1, Parent = frame })
 	self.uiScale = UI.new("UIScale", { Scale = scale, Parent = frame })
-	-- soft drop shadow
-	local shadow = UI.new("ImageLabel", { Name = "Shadow", BackgroundTransparency = 1, Image = "rbxassetid://1316045217",
-		ImageColor3 = Color3.new(0, 0, 0), ImageTransparency = 0.55, ScaleType = Enum.ScaleType.Slice,
-		SliceCenter = Rect.new(10, 10, 118, 118), Size = UDim2.new(1, 28, 1, 28), Position = UDim2.fromOffset(-14, -10),
-		ZIndex = 0, Parent = frame })
-	shadow.ZIndex = -1
 
 	local bar = UI.new("Frame", { Name = "TitleBar", Size = UDim2.new(1, 0, 0, Window.TITLE_H),
 		BackgroundColor3 = UI.os.title, BorderSizePixel = 0, Parent = frame })

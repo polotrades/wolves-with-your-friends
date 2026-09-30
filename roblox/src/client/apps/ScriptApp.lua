@@ -5,8 +5,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Client = script.Parent.Parent
 local UI = require(Client:WaitForChild("UI"))
-local Window = require(Client:WaitForChild("Window"))
 local Desktop = require(Client:WaitForChild("Desktop"))
+local State = require(Client:WaitForChild("State"))
 local PhoneApp = require(script.Parent:WaitForChild("PhoneApp"))
 local PitchScripts = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("PitchScripts"))
 
@@ -19,10 +19,15 @@ function ScriptApp.open()
 		return
 	end
 	local kind = PhoneApp.call and PhoneApp.call.kind or "Anyone"
-	win = Window.new(Desktop.host(), "Script: " .. kind, Color3.fromRGB(40, 110, 230), UDim2.fromOffset(460, 520),
-		UDim2.fromOffset(260, 330))
-	Desktop.trackWindow(win, "Script", Color3.fromRGB(40, 110, 230))
-	local list = UI.new("ScrollingFrame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+	win = Desktop.window("script", "Script: " .. kind, Vector2.new(460, 520))
+	UI.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = UI.os.surface, BorderSizePixel = 0, Parent = win.content })
+	local better = State.has("betterscript")
+	if better then
+		UI.label(win.content, "  ⭐ Better Script: premium lines unlocked", 13, { Size = UDim2.new(1, 0, 0, 22),
+			TextColor3 = UI.colors.gold, Font = UI.bold })
+	end
+	local list = UI.new("ScrollingFrame", { Size = UDim2.new(1, 0, 1, better and -22 or 0),
+		Position = UDim2.fromOffset(0, better and 22 or 0), BackgroundTransparency = 1,
 		AutomaticCanvasSize = Enum.AutomaticSize.Y, CanvasSize = UDim2.new(), ScrollBarThickness = 6, Parent = win.content })
 	UI.pad(list, 10)
 	UI.new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
@@ -32,7 +37,7 @@ function ScriptApp.open()
 		order += 1
 		UI.text(list, i .. ". " .. step:upper(), { Size = UDim2.new(1, 0, 0, 26), TextXAlignment = Enum.TextXAlignment.Left,
 			TextColor3 = UI.colors.gold, LayoutOrder = order })
-		for _, line in PitchScripts.linesFor(kind, step) do
+		for _, line in PitchScripts.linesFor(kind, step, better) do
 			order += 1
 			local text = line:gsub("{me}", me)
 			local b = UI.new("TextButton", { Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,

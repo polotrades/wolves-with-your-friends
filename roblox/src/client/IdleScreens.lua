@@ -261,7 +261,7 @@ function IdleScreens.init()
 		end
 		for _, s in screens do
 			-- hide the terminal while a call is on this desk so the caller + trust bar show through
-			local busy = s.trust ~= nil and s.trust.Visible
+			local busy = (s.trust ~= nil and s.trust.Visible) or s.monitor:GetAttribute("DeskState") ~= nil
 			s.root.Visible = not busy
 			if not busy and (s.monitor.Position - camPos).Magnitude < UPDATE_RANGE then
 				s.crawl.Position = UDim2.fromScale(slide, 0.1)
