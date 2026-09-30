@@ -13,15 +13,18 @@
 
 If the AI text service isn't available to the game yet, clients fall back to canned lines automatically. Without a mic, players type in the Phone app.
 
-## Put the real characters in
+## Put the real furniture in (4 imports)
 
-The NPCs (Receptionist, Security Guard, The Chairman) are placeholder blocks until you import the Blender models:
+The office is built from the Blender layout (`src/shared/OfficeLayout.lua`). Until the models are imported,
+every prop shows up as a grey box of the right size, so the game still works.
 
-1. **File > Import 3D**, pick `../blender/export/Receptionist.fbx` (and `SecurityGuard.fbx`, `TheChairman.fbx`).
-2. In **ServerStorage**, create a folder named **CharacterModels** and put the imported models in it, named `Receptionist`, `SecurityGuard` and `TheChairman`.
-3. Play: the NPCs now use the real models. If one faces the wrong way, set `yaw = 90` (or 180 / -90) next to its `modelName` in `src/server/OfficeBuilder.lua`.
-
-The same export also includes `RookieBroker`, `Intern`, `CryptoBro` and `CEO` for later, when they become playable characters.
+1. In **ServerStorage**, create a folder named **PropModels**.
+2. **File > Import 3D**, pick `../blender/export/props/PropPack1.fbx`. In the importer, keep it as one model and import.
+3. Drag the imported model into **ServerStorage > PropModels**. You can leave it as one model: the game looks
+   inside it for each prop by name (`DeskSet`, `OfficeChair`, `GoldBull`, ...).
+4. Do the same for `PropPack2.fbx`, `PropPack3.fbx` and `PropPack4.fbx`.
+5. Press **Play**. Props are scaled, turned and given real materials (leather, chrome, marble, glass...) automatically.
+   If every prop faces backwards, set `Config.PROP_TURN_DEGREES = 180` in `src/shared/Config.lua`.
 
 ## What works in Phase 1
 
