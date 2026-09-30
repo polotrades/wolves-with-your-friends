@@ -5,7 +5,7 @@ import bpy
 from mathutils import Vector
 
 D = os.path.dirname(os.path.abspath(__file__))
-bpy.ops.wm.open_mainfile(filepath=os.path.join(D, "props.blend"))
+bpy.ops.wm.open_mainfile(filepath=os.environ.get("PROPS_BLEND", os.path.join(D, "props.blend")))
 sc = bpy.context.scene
 cam = sc.camera
 names = [o.name for o in bpy.data.objects if o.type == "EMPTY" and o.parent is None]

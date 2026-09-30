@@ -1071,6 +1071,14 @@ def american_flag(x):
             y = 0.06 * math.sin(sx * 4.2) * (sx / w) - 0.012
             cone("Star", 0.018, 0, 0.006, (sx, y, top - 0.03 - row * (ch - 0.06) / 8), FLAG_WHITE, p,
                  rot=(R(90), 0, 0), outline=False)
+    # gold fringe along the fly edge and a tasseled cord
+    for k in range(14):
+        z = top - k * h / 13
+        cube("Fringe", 1, (0.04 + w + 0.02, 0.06 * math.sin((0.04 + w) * 4.2), z), (0.04, 0.006, 0.012), GOLD, p, bevel=0,
+             outline=False)
+    skin("FlagCord", [(0.03, 0, 2.45), (0.06, -0.03, 2.1), (0.05, -0.02, 1.8)], [(0, 1), (1, 2)], [0.006] * 3, GOLD, p,
+         subsurf=1, outline=False)
+    cone("Tassel", 0.025, 0.005, 0.1, (0.05, -0.02, 1.74), GOLD, p, outline=False)
 
 
 def pool_table(x):
@@ -1113,6 +1121,25 @@ def pool_table(x):
     cube("PoolLampGlow", 1, (0, 0, 1.82), (1.3, 0.28, 0.01), BULB, p, bevel=0, outline=False)
     for sx in (-1, 1):
         tube("LampChain", 0.006, (sx * 0.5, 0, 1.98), (sx * 0.5, 0, 2.6), BRASS, p, outline=False)
+    # diamond sights along the rails, chalk cubes, a scoring bead wire
+    for sx in (-1, 1):
+        for k in range(1, 8):
+            if k == 4:
+                continue
+            cube("Sight", 1, (-L / 2 + 0.1 + k * (L - 0.2) / 8, sx * (W / 2 - 0.05), 0.862), (0.02, 0.02, 0.003), IVORY, p,
+                 rot=(0, 0, R(45)), bevel=0, outline=False)
+        for k in range(1, 4):
+            cube("Sight", 1, (sx * (L / 2 - 0.05), -W / 2 + 0.1 + k * (W - 0.2) / 4, 0.862), (0.02, 0.02, 0.003), IVORY, p,
+                 rot=(0, 0, R(45)), bevel=0, outline=False)
+    for loc in ((1.0, -0.58), (-1.05, 0.58)):
+        cube("Chalk", 1, (loc[0], loc[1], 0.88), (0.025, 0.025, 0.025), M("SmoothPlastic", "Chalk", (0.2, 0.45, 0.85), 0.8),
+             p, bevel=0.003)
+    tube("ScoreWire", 0.003, (-0.9, 0, 2.3), (0.9, 0, 2.3), BRASS, p, outline=False)
+    for k in range(10):
+        sphere("ScoreBead", 0.02, (-0.8 + k * 0.08 + (0.6 if k > 5 else 0), 0, 2.3), (1.3, 1, 1), WALNUT, p, rot=(0, R(90), 0),
+               outline=False)
+    cube("PoolApron", 1, (0, -W / 2 + 0.005, 0.64), (L - 0.3, 0.02, 0.1), WALNUT, p, bevel=0.01)
+    cube("ApronPlate", 1, (0, -W / 2 - 0.006, 0.64), (0.3, 0.003, 0.05), BRASS, p, bevel=0, outline=False)
 
 
 def fish_tank_broken(x):
@@ -1151,6 +1178,11 @@ def floor_lamp(x):
     tube("LampPole", 0.015, (0, 0, 0.05), (0, 0, 1.55), BRASS, p)
     cone("LampShade", 0.28, 0.18, 0.35, (0, 0, 1.6), LAMPSHADE, p)
     sphere("LampBulb", 0.05, (0, 0, 1.5), (1, 1, 1.2), BULB, p, outline=False)
+    torus("ShadeTrimTop", 0.18, 0.006, (0, 0, 1.775), GOLD, p, outline=False)
+    torus("ShadeTrimBottom", 0.28, 0.006, (0, 0, 1.425), GOLD, p, outline=False)
+    tube("PullChain", 0.003, (0.05, 0, 1.47), (0.05, 0, 1.3), BRASS, p, outline=False)
+    sphere("PullBead", 0.012, (0.05, 0, 1.29), (1, 1, 1.4), BRASS, p, outline=False)
+    torus("PoleCollar", 0.02, 0.006, (0, 0, 0.8), BRASS, p, outline=False)
 
 
 def desk_globe(x):
@@ -1164,6 +1196,9 @@ def desk_globe(x):
                (rng.uniform(0.8, 1.6), rng.uniform(0.8, 1.6), 0.5), M("SmoothPlastic", "Land", (0.75, 0.65, 0.35), 0.5), p,
                rot=(0, math.pi / 2 - b, a), outline=False)
     torus("GlobeRing", 0.19, 0.008, (0, 0, 0.37), BRASS, p, rot=(R(90), R(23), 0))
+    torus("Meridian", 0.175, 0.01, (0, 0, 0.37), BRASS, p, rot=(R(90), 0, 0), outline=False)
+    torus("Equator", 0.161, 0.003, (0, 0, 0.37), M("SmoothPlastic", "Equator", (0.9, 0.2, 0.2), 0.4), p, outline=False)
+    sphere("GlobePin", 0.015, (0.04, -0.14, 0.44), (1, 1, 1), PLASTIC_RED, p, outline=False)
 
 
 def bar_cart(x):
@@ -1190,11 +1225,12 @@ def bar_cart(x):
 def neon_sign(x, name="NeonSign", body="BUY BUY BUY", m=None):
     p = prop(name, x)
     m = m or NEON_PINK
-    cube("NeonBacker", 1, (0, 0.03, 2.0), (2.2, 0.03, 0.6), M("Glass", "Backer", (0.05, 0.05, 0.07), 0.1), p, bevel=0.01,
+    bw = max(2.2, len(body) * 0.24 + 0.3)
+    cube("NeonBacker", 1, (0, 0.03, 2.0), (bw, 0.03, 0.6), M("Glass", "Backer", (0.05, 0.05, 0.07), 0.1), p, bevel=0.01,
          outline=False)
     text("NeonText", body, (0, 0.0, 2.0), 0.35, m, p, extrude=0.02)
     for sx in (-1, 1):
-        tube("NeonStandoff", 0.01, (sx * 0.95, 0.05, 2.0), (sx * 0.95, 0.12, 2.0), CHROME, p, outline=False)
+        tube("NeonStandoff", 0.01, (sx * (bw / 2 - 0.15), 0.05, 2.0), (sx * (bw / 2 - 0.15), 0.12, 2.0), CHROME, p, outline=False)
 
 
 def chandelier(x):
@@ -1212,6 +1248,12 @@ def chandelier(x):
         for k in range(3):
             sphere("Crystal", 0.018, (cx * (0.4 + k * 0.25), cy * (0.4 + k * 0.25), 1.95 - k * 0.04), (1, 1, 1.6), GLASS, p,
                    outline=False)
+    for i in range(16):
+        a = i * math.pi / 8
+        tube("CrystalDrop", 0.003, (0.5 * math.cos(a), 0.5 * math.sin(a), 2.03), (0.5 * math.cos(a), 0.5 * math.sin(a), 1.92),
+             GLASS, p, outline=False)
+        sphere("Prism", 0.02, (0.5 * math.cos(a), 0.5 * math.sin(a), 1.9), (1, 1, 1.8), GLASS, p, outline=False)
+    cone("CeilingCanopy", 0.12, 0.06, 0.05, (0, 0, 2.98), GOLD, p)
 
 
 def rug(x):
@@ -1267,11 +1309,17 @@ def motivational_poster(x, name="PosterHustle", word="HUSTLE", sub="THE PHONE WO
     cube("PosterPrint", 1, (0, -0.001, 1.75), (0.8, 0.004, 0.85), M("SmoothPlastic", "Poster" + word.title(), col, 0.6), p,
          bevel=0, outline=False)
     # a lone mountain peak with a sunrise
-    cone("Mountain", 0.35, 0, 0.45, (0, -0.004, 1.55), M("SmoothPlastic", "PosterMtn", (0.25, 0.3, 0.45), 0.6), p,
-         rot=(R(90), 0, 0), scale=(1, 1, 0.05), outline=False)
-    sphere("Sun", 0.1, (0.15, -0.002, 1.9), (1, 0.05, 1), NEON_GOLD, p, outline=False)
-    text("PosterWord", word, (0, -0.004, 1.25), 0.1, PLASTIC_WHT, p, extrude=0.001)
-    text("PosterSub", sub, (0, -0.004, 1.16), 0.03, PLASTIC_WHT, p, extrude=0.001)
+    # a diamond whose lower half hides behind the ground strip reads as a mountain peak
+    cube("Mountain", 1, (-0.05, -0.004, 1.45), (0.4, 0.004, 0.4), M("SmoothPlastic", "PosterMtn", (0.25, 0.3, 0.45), 0.6), p,
+         rot=(0, R(45), 0), bevel=0, outline=False)
+    cube("Mountain2", 1, (0.2, -0.003, 1.42), (0.28, 0.004, 0.28), M("SmoothPlastic", "PosterMtn2", (0.35, 0.4, 0.55), 0.6),
+         p, rot=(0, R(45), 0), bevel=0, outline=False)
+    cube("SnowCap", 1, (-0.05, -0.005, 1.66), (0.1, 0.004, 0.1), PLASTIC_WHT, p, rot=(0, R(45), 0), bevel=0, outline=False)
+    cube("PosterGround", 1, (0, -0.006, 1.3), (0.8, 0.004, 0.3), M("SmoothPlastic", "PosterGround", (0.08, 0.08, 0.1), 0.6),
+         p, bevel=0, outline=False)
+    sphere("Sun", 0.1, (0.18, -0.002, 1.95), (1, 0.05, 1), NEON_GOLD, p, outline=False)
+    text("PosterWord", word, (0, -0.009, 1.25), 0.1, PLASTIC_WHT, p, extrude=0.001)
+    text("PosterSub", sub, (0, -0.009, 1.2), 0.03, PLASTIC_WHT, p, extrude=0.001)
 
 
 def bonsai(x):
@@ -1282,6 +1330,10 @@ def bonsai(x):
          [(0, 1), (1, 2), (2, 3), (2, 4)], [0.03, 0.025, 0.02, 0.012, 0.012], WALNUT, p)
     for loc, s in (((0.1, 0, 0.33), 0.08), ((-0.12, 0, 0.33), 0.07), ((-0.02, 0, 0.36), 0.09)):
         sphere("BonsaiCanopy", s, loc, (1.4, 1, 0.6), LEAF, p)
+    for loc in ((0.12, -0.05), (-0.1, 0.04)):
+        sphere("Pebble", 0.018, (loc[0], loc[1], 0.092), (1.3, 1, 0.6), M("Pebble", "Stone", (0.6, 0.6, 0.62), 0.8), p,
+               outline=False)
+    cube("BonsaiTray", 1, (0, 0, 0.005), (0.42, 0.28, 0.01), WALNUT, p, bevel=0.003)
 
 
 def orchid(x):
@@ -1354,12 +1406,31 @@ def massage_chair(x):
         cube("MCArm", 1, (sx * 0.38, -0.05, 0.6), (0.14, 0.8, 0.35), PLASTIC_BLK, p, bevel=0.06)
     cube("MCFootrest", 1, (0, -0.55, 0.22), (0.5, 0.3, 0.35), PLASTIC_BLK, p, rot=(R(20), 0, 0), bevel=0.06)
     cube("MCRemote", 1, (0.38, -0.3, 0.8), (0.06, 0.15, 0.02), PLASTIC_WHT, p, bevel=0.008)
+    for sx in (-1, 1):
+        for k in range(4):
+            sphere("RollerBump", 0.045, (sx * 0.12, 0.25 - k * 0.02, 0.65 + k * 0.17), (1, 0.6, 1), LEATHER_BROWN, p,
+                   outline=False)
+        cube("ArmPanel", 1, (sx * 0.38, -0.2, 0.78), (0.1, 0.25, 0.005), PLASTIC_GRY, p, bevel=0, outline=False)
+    for k in range(4):
+        cube("PanelButton", 1, (0.36 + (k % 2) * 0.04, -0.28 + (k // 2) * 0.05, 0.785), (0.025, 0.025, 0.01),
+             [NEON_BLUE, NEON_GREEN, NEON_PINK, NEON_GOLD][k], p, bevel=0, outline=False)
+    sphere("HeadPillow", 0.14, (0, 0.33, 1.4), (1.3, 0.5, 0.6), LEATHER, p)
 
 
 def bean_bag(x):
     p = prop("BeanBag", x)
-    sphere("BeanBag", 0.5, (0, 0, 0.32), (1, 1.05, 0.65), M("Fabric", "BeanGold", (0.9, 0.62, 0.15), 0.9), p, subsurf=1)
-    sphere("BeanDent", 0.3, (0, -0.12, 0.55), (1, 1, 0.4), M("Fabric", "BeanGold", (0.9, 0.62, 0.15), 0.9), p, outline=False)
+    bean = M("Fabric", "BeanGold", (0.9, 0.62, 0.15), 0.9)
+    # slumped teardrop: fat bottom, a raised backrest and a seat dent
+    sphere("BeanBag", 0.5, (0, 0, 0.3), (1, 1.05, 0.6), bean, p)
+    sphere("BeanBack", 0.38, (0, 0.2, 0.6), (1, 0.7, 0.9), bean, p)
+    sphere("BeanSeat", 0.3, (0, -0.15, 0.5), (1, 0.9, 0.35), M("Fabric", "BeanSeam", (0.7, 0.45, 0.1), 0.9), p,
+           outline=False)
+    for k in range(6):
+        a = k * math.pi / 3
+        tube("BeanSeam", 0.006, (0.5 * math.cos(a) * 0.98, 0.52 * math.sin(a) * 0.98, 0.3), (0.12 * math.cos(a), 0.12 * math.sin(a), 0.55),
+             M("Fabric", "BeanSeam", (0.7, 0.45, 0.1), 0.9), p, outline=False)
+    sphere("BeanPatch", 0.08, (0, -0.48, 0.35), (1, 0.15, 1), GOLD, p, outline=False)
+    text("BeanLogo", "W", (0, -0.5, 0.35), 0.08, PLASTIC_BLK, p, extrude=0.003)
 
 
 def grand_piano(x):
@@ -1382,6 +1453,19 @@ def grand_piano(x):
     cube("PianoBench", 1, (0, -0.65, 0.48), (0.9, 0.35, 0.08), LEATHER, p, bevel=0.03)
     for sx in (-1, 1):
         cube("BenchLeg", 1, (sx * 0.38, -0.65, 0.22), (0.05, 0.3, 0.44), PIANO_BLK, p, bevel=0.01)
+    cube("MusicStand", 1, (0, 0.05, 1.0), (0.7, 0.02, 0.25), PIANO_BLK, p, rot=(R(-15), 0, 0), bevel=0.005)
+    cube("SheetMusic", 1, (0, 0.035, 1.02), (0.5, 0.004, 0.2), PAPER, p, rot=(R(-15), 0, 0), bevel=0, outline=False)
+    for k in range(5):
+        cube("Staff", 1, (0, 0.03, 0.97 + k * 0.02), (0.44, 0.002, 0.003), PLASTIC_BLK, p, rot=(R(-15), 0, 0), bevel=0,
+             outline=False)
+    cube("PedalBox", 1, (0, 0.25, 0.1), (0.25, 0.08, 0.2), PIANO_BLK, p, bevel=0.01)
+    for k in (-1, 0, 1):
+        cube("Pedal", 1, (k * 0.06, 0.17, 0.04), (0.03, 0.12, 0.01), BRASS, p, bevel=0.003, outline=False)
+    candel = M("Neon", "PianoCandle", (1.0, 0.85, 0.55), 0.3, emit=4)
+    tube("Candelabra", 0.012, (0.55, 0.7, 1.0), (0.55, 0.7, 1.2), GOLD, p, outline=False)
+    for k in (-1, 0, 1):
+        tube("PianoCandleStick", 0.012, (0.55 + k * 0.07, 0.7, 1.2), (0.55 + k * 0.07, 0.7, 1.3), PLASTIC_WHT, p, outline=False)
+        sphere("PianoFlame", 0.012, (0.55 + k * 0.07, 0.7, 1.32), (1, 1, 1.8), candel, p, outline=False)
 
 
 def model_yacht(x):
@@ -1405,6 +1489,12 @@ def money_counter(x):
     cube("MCounterTray", 1, (0, -0.15, 0.04), (0.2, 0.08, 0.04), PLASTIC_BLK, p, bevel=0.01)
     cube("MCounterOut", 1, (0, -0.15, 0.07), (0.16, 0.07, 0.03), CASH, p, bevel=0.003, outline=False)
     cube("MCounterDisplay", 1, (0, -0.141, 0.19), (0.16, 0.004, 0.05), NEON_GREEN, p, bevel=0, outline=False)
+    for k in range(3):
+        cube("MCButton", 1, (-0.08 + k * 0.08, -0.141, 0.1), (0.04, 0.006, 0.025), [NEON_GREEN, PLASTIC_RED, PLASTIC_WHT][k],
+             p, bevel=0.003, outline=False)
+    for k in range(5):
+        cube("FlyingBill", 1, (rng.uniform(-0.2, 0.2), -0.25 - k * 0.05, 0.12 + k * 0.06), (0.08, 0.035, 0.002), CASH, p,
+             rot=(rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(0, 3)), bevel=0, outline=False)
 
 
 def shredder(x):
@@ -1536,7 +1626,7 @@ def mounted_fish(x):
 
 
 def desk_nameplate(x):
-    p = prop("Nameplate", x)
+    p = prop("DeskNameplate", x)
     cube("NPBase", 1, (0, 0, 0.02), (0.3, 0.06, 0.04), WALNUT, p, bevel=0.01)
     cube("NPPlate", 1, (0, 0, 0.07), (0.28, 0.01, 0.07), GOLD, p, rot=(R(-15), 0, 0), bevel=0.003)
     text("NPText", "BIG SHOT", (0, -0.012, 0.07), 0.035, PLASTIC_BLK, p, rot=(R(75), 0, 0), extrude=0.001)
@@ -1664,6 +1754,369 @@ BUILDERS_5 = [american_flag, pool_table, fish_tank_broken, floor_lamp, desk_glob
               water_puddle, city_model]
 
 
+
+# ---------------------------------------------------------------- round 6: more Wall Street decor and office life
+SERVER_M = M("Metal", "ServerRack", (0.08, 0.08, 0.1), 0.4, 0.6)
+LED_RED = M("Neon", "LedRed", (1.0, 0.1, 0.1), 0.3, emit=4)
+CEIL_PANEL = M("Neon", "CeilingPanel", (1.0, 0.97, 0.9), 0.3, emit=2)
+
+
+def trading_rig(x):
+    """Six-monitor trading desk rig: the classic Wall Street wall of charts."""
+    p = prop("TradingRig", x)
+    tube("RigPole", 0.03, (0, 0.2, 0.75), (0, 0.2, 1.75), DARKMETAL, p)
+    cube("RigClamp", 1, (0, 0.2, 0.76), (0.12, 0.12, 0.04), DARKMETAL, p, bevel=0.01)
+    cube("RigDesk", 1, (0, 0, 0.72), (2.2, 0.9, 0.05), MARBLE_BLK, p, bevel=0.01)
+    for sx in (-1, 1):
+        cube("RigLeg", 1, (sx * 1.0, 0, 0.36), (0.06, 0.8, 0.72), CHROME, p, bevel=0.01)
+    up, dn = M("Neon", "CandleUp", (0.15, 1.0, 0.35), 0.3, emit=3), M("Neon", "CandleDown", (1.0, 0.15, 0.2), 0.3, emit=3)
+    for row in range(2):
+        for col in (-1, 0, 1):
+            cx, cz = col * 0.62, 1.1 + row * 0.4
+            ang = -col * R(12)
+            cube("RigBezel", 1, (cx, 0.12 + abs(col) * 0.08, cz), (0.6, 0.03, 0.37), PLASTIC_BLK, p, rot=(0, 0, ang), bevel=0.008)
+            cube("RigScreen", 1, (cx, 0.1 + abs(col) * 0.08, cz), (0.56, 0.003, 0.33),
+                 M("Glass", "TradeScreen", (0.01, 0.015, 0.03), 0.05), p, rot=(0, 0, ang), bevel=0, outline=False)
+            price = 0.5
+            for k in range(10):
+                o = price
+                price = min(0.9, max(0.1, o + rng.uniform(-0.12, 0.13)))
+                m = up if price >= o else dn
+                lx = cx + (-0.22 + k * 0.048) * math.cos(ang)
+                ly = 0.097 + abs(col) * 0.08 + (-0.22 + k * 0.048) * math.sin(ang)
+                cube("RigCandle", 1, (lx, ly, cz - 0.13 + (o + price) / 2 * 0.26), (0.022, 0.002, max(abs(price - o) * 0.26, 0.01)),
+                     m, p, rot=(0, 0, ang), bevel=0, outline=False)
+            tube("RigArm", 0.012, (0, 0.2, cz), (cx, 0.15 + abs(col) * 0.08, cz), DARKMETAL, p, outline=False)
+    cube("RigKeyboard", 1, (0, -0.25, 0.76), (0.55, 0.18, 0.02), PLASTIC_BLK, p, bevel=0.005)
+    cube("RigKeys", 1, (0, -0.25, 0.772), (0.5, 0.14, 0.004), PLASTIC_GRY, p, bevel=0, outline=False)
+    sphere("RigMouse", 0.03, (0.42, -0.25, 0.76), (1, 1.5, 0.6), PLASTIC_BLK, p)
+    cube("RigPhone", 1, (-0.7, -0.2, 0.78), (0.25, 0.2, 0.07), PLASTIC_GRY, p, bevel=0.02)
+    cube("RigPhoneKeys", 1, (-0.7, -0.24, 0.816), (0.12, 0.08, 0.003), NEON_GREEN, p, bevel=0, outline=False)
+
+
+def gold_wolf(x):
+    p = prop("GoldWolfStatue", x)
+    cube("WolfPlinth", 1, (0, 0, 0.3), (0.9, 0.6, 0.6), MARBLE_BLK, p, bevel=0.02)
+    cube("WolfPlaque", 1, (0, -0.302, 0.3), (0.4, 0.004, 0.12), GOLD, p, bevel=0, outline=False)
+    text("WolfPlaqueText", "HOWL AT THE MARKET", (0, -0.306, 0.3), 0.03, PLASTIC_BLK, p, extrude=0.001)
+    # sitting wolf howling at the sky, built as one skin mesh
+    verts = [(0, 0.1, 0.62), (0, 0.05, 0.85), (0, -0.05, 1.05), (0, -0.1, 1.22), (0, -0.18, 1.32),  # hips -> snout
+             (-0.1, -0.08, 0.62), (0.1, -0.08, 0.62), (-0.08, -0.1, 0.85), (0.08, -0.1, 0.85),  # front legs
+             (0, 0.3, 0.62), (0, 0.42, 0.66)]  # tail
+    edges = [(0, 1), (1, 2), (2, 3), (3, 4), (1, 7), (7, 5), (1, 8), (8, 6), (0, 9), (9, 10)]
+    radii = [0.16, 0.13, 0.09, 0.07, 0.035, 0.04, 0.04, 0.045, 0.045, 0.06, 0.03]
+    skin("WolfBody", verts, edges, radii, GOLD, p)
+    # long snout pointing at the sky, open jaw, fluffy chest ruff
+    cone("WolfSnout", 0.05, 0.02, 0.18, (0, -0.2, 1.4), GOLD, p, rot=(R(-35), 0, 0))
+    cone("WolfJaw", 0.03, 0.012, 0.12, (0, -0.22, 1.3), GOLD, p, rot=(R(-70), 0, 0))
+    sphere("WolfNose", 0.02, (0, -0.25, 1.48), (1, 1, 1), PLASTIC_BLK, p, outline=False)
+    for k in range(5):
+        cone("Ruff", 0.05, 0, 0.1, (-0.08 + k * 0.04, -0.12, 0.95), GOLD, p, rot=(R(160), 0, 0), outline=False)
+    for sx in (-1, 1):
+        cone("WolfEar", 0.03, 0, 0.09, (sx * 0.05, -0.05, 1.3), GOLD, p, rot=(R(-30), sx * R(15), 0))
+        sphere("HindLeg", 0.1, (sx * 0.12, 0.1, 0.66), (0.7, 1.2, 0.6), GOLD, p)
+
+
+def big_letters(x):
+    p = prop("WolfLetters", x)
+    cube("LetterWall", 1, (0, 0.06, 2.2), (4.2, 0.04, 1.0), WALNUT, p, bevel=0.01)
+    for k in range(9):
+        cube("WallSlat", 1, (-2.0 + k * 0.5, 0.035, 2.2), (0.04, 0.02, 1.0), M("Wood", "SlatDark", (0.15, 0.07, 0.03), 0.5), p,
+             bevel=0, outline=False)
+    text("Letters", "WOLF & CO.", (0, -0.02, 2.2), 0.55, GOLD, p, extrude=0.05)
+    tube("LetterLight", 0.01, (-2.0, -0.2, 2.8), (2.0, -0.2, 2.8), BULB, p, outline=False)
+
+
+def server_rack(x):
+    p = prop("ServerRack", x)
+    cube("RackBody", 1, (0, 0, 1.0), (0.65, 0.8, 2.0), SERVER_M, p, bevel=0.01)
+    cube("RackDoor", 1, (0, -0.405, 1.0), (0.58, 0.01, 1.9), M("Glass", "Smoke", (0.2, 0.2, 0.22), 0.1), p, bevel=0,
+         outline=False)
+    for k in range(14):
+        z = 0.2 + k * 0.125
+        cube("ServerUnit", 1, (0, -0.39, z), (0.54, 0.02, 0.1), PLASTIC_BLK, p, bevel=0.003, outline=False)
+        for j in range(4):
+            cube("ServerLed", 1, (0.18 + j * 0.02, -0.402, z), (0.008, 0.004, 0.008),
+                 [NEON_GREEN, NEON_GREEN, NEON_BLUE, LED_RED][rng.randint(0, 3)], p, bevel=0, outline=False)
+    tube("RackHandle", 0.008, (0.25, -0.42, 0.8), (0.25, -0.42, 1.2), CHROME, p, outline=False)
+
+
+def phone_booth(x):
+    p = prop("PhoneBooth", x)
+    cube("BoothFloor", 1, (0, 0, 0.05), (1.1, 1.1, 0.1), M("Carpet", "Booth", (0.1, 0.1, 0.15), 0.9), p, bevel=0.01)
+    cube("BoothRoof", 1, (0, 0, 2.3), (1.1, 1.1, 0.12), PLASTIC_BLK, p, bevel=0.02)
+    cube("BoothBack", 1, (0, 0.53, 1.18), (1.1, 0.04, 2.15), M("Fabric", "Acoustic", (0.2, 0.35, 0.3), 0.95), p, bevel=0.01)
+    for sx in (-1, 1):
+        cube("BoothSide", 1, (sx * 0.53, 0, 1.18), (0.04, 1.02, 2.15), M("Fabric", "Acoustic", (0.2, 0.35, 0.3), 0.95), p,
+             bevel=0.01)
+    cube("BoothDoor", 1, (0, -0.53, 1.18), (1.0, 0.03, 2.1), GLASS, p, bevel=0.005, outline=False)
+    tube("BoothHandle", 0.012, (0.4, -0.57, 1.0), (0.4, -0.57, 1.4), CHROME, p, outline=False)
+    cube("BoothShelf", 1, (0, 0.35, 1.05), (0.9, 0.3, 0.04), OAK, p, bevel=0.01)
+    cube("BoothStool", 1, (0, 0.05, 0.65), (0.4, 0.4, 0.06), LEATHER, p, bevel=0.02)
+    tube("StoolPost", 0.03, (0, 0.05, 0.1), (0, 0.05, 0.62), CHROME, p, outline=False)
+    cube("BoothLight", 1, (0, 0, 2.23), (0.6, 0.6, 0.01), CEIL_PANEL, p, bevel=0, outline=False)
+    text("BoothSign", "QUIET CALLS", (0, -0.6, 2.3), 0.07, NEON_GOLD, p, extrude=0.003)
+
+
+def espresso_bar(x):
+    p = prop("EspressoBar", x)
+    cube("BarCounter", 1, (0, 0, 0.5), (2.4, 0.7, 1.0), WALNUT, p, bevel=0.02)
+    cube("BarTop", 1, (0, 0, 1.02), (2.5, 0.75, 0.05), MARBLE, p, bevel=0.01)
+    for k in range(6):
+        cube("BarPanel", 1, (-1.0 + k * 0.4, -0.352, 0.5), (0.36, 0.004, 0.85), M("Wood", "SlatDark", (0.15, 0.07, 0.03), 0.5),
+             p, bevel=0, outline=False)
+    cube("Espresso", 1, (-0.6, 0.1, 1.27), (0.6, 0.45, 0.45), CHROME, p, bevel=0.04)
+    for k in (-1, 1):
+        tube("GroupHead", 0.04, (-0.6 + k * 0.15, -0.12, 1.22), (-0.6 + k * 0.15, -0.12, 1.12), CHROME, p, outline=False)
+        tube("Portafilter", 0.01, (-0.6 + k * 0.15, -0.14, 1.12), (-0.6 + k * 0.15, -0.35, 1.12), PLASTIC_BLK, p, outline=False)
+    cone("BeanHopper", 0.1, 0.07, 0.2, (-0.3, 0.15, 1.6), GLASS, p, outline=False)
+    sphere("Beans", 0.07, (-0.3, 0.15, 1.56), (1, 1, 0.8), M("SmoothPlastic", "Beans", (0.25, 0.12, 0.05), 0.6), p,
+           outline=False)
+    for k in range(4):
+        tube("Cup", 0.035, (0.2 + k * 0.12, 0, 1.045), (0.2 + k * 0.12, 0, 1.12), CERAMIC, p, r2=0.04)
+    cube("Grinder", 1, (0.9, 0.15, 1.2), (0.2, 0.2, 0.3), PLASTIC_BLK, p, bevel=0.02)
+    for k in range(3):
+        sphere("Pastry", 0.06, (0.3 + k * 0.15, 0.2, 1.08), (1.5, 1, 0.6), BUN, p)
+    for k in range(3):
+        cube("BarStool", 1, (-0.8 + k * 0.8, -0.8, 0.75), (0.35, 0.35, 0.06), LEATHER, p, bevel=0.03)
+        tube("BarStoolPost", 0.03, (-0.8 + k * 0.8, -0.8, 0.05), (-0.8 + k * 0.8, -0.8, 0.72), CHROME, p, outline=False)
+        torus("FootRing", 0.15, 0.01, (-0.8 + k * 0.8, -0.8, 0.3), CHROME, p, outline=False)
+        cone("StoolBase", 0.2, 0.18, 0.03, (-0.8 + k * 0.8, -0.8, 0.015), CHROME, p)
+
+
+def money_gun(x):
+    p = prop("MoneyGun", x)
+    green = M("Plastic", "GunGreen", (0.2, 0.7, 0.3), 0.3)
+    cube("MGBody", 1, (0, 0, 0.14), (0.12, 0.3, 0.14), green, p, bevel=0.03)
+    cube("MGGrip", 1, (0, 0.1, 0.02), (0.07, 0.08, 0.18), PLASTIC_BLK, p, rot=(R(-15), 0, 0), bevel=0.01)
+    cube("MGMag", 1, (0, -0.02, 0.26), (0.1, 0.18, 0.08), CASH, p, bevel=0.005)
+    cube("MGMouth", 1, (0, -0.16, 0.14), (0.14, 0.03, 0.06), PLASTIC_BLK, p, bevel=0.01)
+    text("MGLogo", "$", (0.062, 0, 0.14), 0.08, GOLD, p, rot=(R(90), 0, R(90)), extrude=0.003)
+    for k in range(6):
+        cube("MGBill", 1, (rng.uniform(-0.1, 0.1), -0.22 - k * 0.07, 0.14 + rng.uniform(-0.05, 0.08)), (0.08, 0.035, 0.002), CASH,
+             p, rot=(rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(0, 3)), bevel=0, outline=False)
+
+
+def gold_toilet(x):
+    p = prop("GoldToilet", x)
+    cube("GTTank", 1, (0, 0.22, 0.65), (0.45, 0.2, 0.4), GOLD, p, bevel=0.03)
+    cube("GTTankLid", 1, (0, 0.22, 0.87), (0.48, 0.22, 0.04), GOLD, p, bevel=0.01)
+    cube("GTHandle", 1, (-0.2, 0.11, 0.78), (0.08, 0.02, 0.02), CHROME, p, bevel=0.005)
+    cone("GTBase", 0.15, 0.2, 0.4, (0, -0.05, 0.2), GOLD, p, scale=(1, 1.3, 1))
+    torus("GTSeat", 0.18, 0.04, (0, -0.1, 0.43), GOLD, p, scale=(1, 1.3, 1))
+    cube("GTLid", 1, (0, 0.13, 0.7), (0.4, 0.04, 0.45), GOLD, p, rot=(R(-10), 0, 0), bevel=0.05)
+    sphere("GTJewel", 0.03, (0, 0.105, 0.72), (1, 0.5, 1), M("Glass", "Ruby", (0.8, 0.02, 0.1), 0.05), p, outline=False)
+    cube("GTRug", 1, (0, -0.35, 0.005), (0.8, 0.6, 0.01), VELVET, p, bevel=0.005, outline=False)
+    tube("TPHolder", 0.012, (0.35, 0.1, 0.6), (0.45, 0.1, 0.6), GOLD, p, outline=False)
+    tube("TPRoll", 0.05, (0.37, 0.1, 0.6), (0.45, 0.1, 0.6), M("Fabric", "TPCash", (0.35, 0.6, 0.3), 0.8), p)
+
+
+def security_camera(x):
+    p = prop("SecurityCamera", x)
+    cube("CamMount", 1, (0, 0.1, 2.5), (0.1, 0.05, 0.14), PLASTIC_WHT, p, bevel=0.01)
+    tube("CamArm", 0.015, (0, 0.08, 2.5), (0, -0.05, 2.45), PLASTIC_WHT, p, outline=False)
+    cube("CamBody", 1, (0, -0.15, 2.42), (0.1, 0.25, 0.1), PLASTIC_WHT, p, rot=(R(-15), 0, 0), bevel=0.02)
+    tube("CamLens", 0.035, (0, -0.27, 2.39), (0, -0.29, 2.385), SCREEN, p, outline=False)
+    sphere("CamLed", 0.008, (0.035, -0.27, 2.43), (1, 1, 1), LED_RED, p, outline=False)
+
+
+def desk_fan(x):
+    p = prop("DeskFan", x)
+    cone("FanBase", 0.1, 0.08, 0.03, (0, 0, 0.015), CHROME, p)
+    tube("FanNeck", 0.012, (0, 0, 0.03), (0, 0, 0.25), CHROME, p, outline=False)
+    tube("FanMotor", 0.05, (0, 0.05, 0.28), (0, 0.13, 0.28), CHROME, p)
+    for k in range(4):
+        a = k * math.pi / 2
+        sphere("FanBlade", 0.06, (0.06 * math.cos(a), 0.0, 0.28 + 0.06 * math.sin(a)), (1, 0.1, 0.5),
+               M("Plastic", "FanBlade", (0.3, 0.7, 0.9), 0.3), p, rot=(0, -a + 0.3, 0), outline=False)
+    torus("FanCage", 0.13, 0.004, (0, -0.01, 0.28), CHROME, p, rot=(R(90), 0, 0), outline=False)
+    for k in range(8):
+        a = k * math.pi / 4
+        tube("CageWire", 0.002, (0, -0.03, 0.28), (0.13 * math.cos(a), -0.01, 0.28 + 0.13 * math.sin(a)), CHROME, p,
+             outline=False)
+
+
+def newspaper_stack(x):
+    p = prop("NewspaperStack", x)
+    for k in range(8):
+        cube("Paper", 1, (rng.uniform(-0.02, 0.02), rng.uniform(-0.02, 0.02), 0.012 + k * 0.024), (0.3, 0.42, 0.022),
+             M("SmoothPlastic", "Newsprint", (0.9, 0.88, 0.8), 0.8), p, rot=(0, 0, rng.uniform(-0.1, 0.1)), bevel=0.003)
+    text("Masthead", "WALL ST. DAILY", (0, -0.05, 0.2), 0.04, PLASTIC_BLK, p, rot=(0, 0, 0), extrude=0.001)
+    text("Headline", "STONKS ONLY GO UP", (0, 0.05, 0.2), 0.03, PLASTIC_BLK, p, rot=(0, 0, 0), extrude=0.001)
+    tube("Twine", 0.004, (0, -0.22, 0.1), (0, 0.22, 0.1), FABRIC_CREAM, p, outline=False)
+
+
+def fruit_bowl(x):
+    p = prop("FruitBowl", x)
+    sphere("Bowl", 0.18, (0, 0, 0.1), (1, 1, 0.5), CERAMIC, p)
+    cols = [(0.85, 0.05, 0.05), (1.0, 0.55, 0.05), (0.5, 0.8, 0.1), (0.4, 0.05, 0.4), (1.0, 0.85, 0.15)]
+    for k in range(9):
+        a = k * 0.7
+        r = 0.08 if k < 6 else 0.02
+        sphere("Fruit", 0.05, (r * math.cos(a), r * math.sin(a), 0.16 + (0.05 if k >= 6 else 0)), (1, 1, 1),
+               M("SmoothPlastic", "Fruit%d" % (k % 5), cols[k % 5], 0.3), p, outline=False)
+    tube("Stem", 0.004, (0, 0, 0.26), (0.01, 0, 0.29), WALNUT, p, outline=False)
+
+
+def recycling_bins(x):
+    p = prop("RecyclingBins", x)
+    for k, (n, col, label) in enumerate((("Paper", (0.1, 0.35, 0.8), "PAPER"), ("Cans", (1.0, 0.8, 0.1), "CANS"),
+                                         ("Trash", (0.15, 0.15, 0.17), "LOSSES"))):
+        bx = -0.45 + k * 0.45
+        cube("Bin" + n, 1, (bx, 0, 0.4), (0.4, 0.4, 0.8), M("Plastic", "Bin" + n, col, 0.4), p, bevel=0.03)
+        cube("BinLid" + n, 1, (bx, 0, 0.82), (0.42, 0.42, 0.04), PLASTIC_BLK, p, bevel=0.01)
+        cube("BinSlot" + n, 1, (bx, -0.1, 0.843), (0.25, 0.06, 0.003), PLASTIC_GRY, p, bevel=0, outline=False)
+        text("BinLabel" + n, label, (bx, -0.205, 0.55), 0.06, PLASTIC_WHT, p, extrude=0.002)
+
+
+def fire_alarm(x):
+    p = prop("FireAlarm", x)
+    cube("AlarmBox", 1, (0, 0.02, 1.3), (0.14, 0.05, 0.2), M("Plastic", "ExtRed", (0.85, 0.05, 0.05), 0.25), p, bevel=0.01)
+    cube("AlarmHandle", 1, (0, -0.01, 1.3), (0.08, 0.03, 0.05), PLASTIC_WHT, p, bevel=0.005)
+    text("AlarmText", "PULL", (0, -0.006, 1.37), 0.025, PLASTIC_WHT, p, extrude=0.001)
+    tube("Strobe", 0.05, (0, 0.03, 1.7), (0, -0.02, 1.7), M("Plastic", "ExtRed", (0.85, 0.05, 0.05), 0.25), p)
+    cube("StrobeLens", 1, (0, -0.025, 1.7), (0.05, 0.01, 0.03), PLASTIC_WHT, p, bevel=0.003, outline=False)
+
+
+def elevator_panel(x):
+    p = prop("ElevatorPanel", x)
+    cube("EPPlate", 1, (0, 0.01, 1.2), (0.15, 0.02, 0.35), CHROME, p, bevel=0.005)
+    for k, z in enumerate((1.28, 1.12)):
+        tube("EPButton", 0.03, (0, 0.0, z), (0, -0.01, z), [NEON_GOLD, PLASTIC_WHT][k], p, outline=False)
+        cone("EPArrow", 0.012, 0, 0.02, (0, -0.012, z), PLASTIC_BLK, p, rot=(R(90) if k == 0 else R(-90), 0, 0),
+             scale=(1, 1, 0.2), outline=False)
+    cube("FloorDisplay", 1, (0, 0.01, 2.4), (0.3, 0.02, 0.12), PLASTIC_BLK, p, bevel=0.005)
+    text("FloorNum", "100", (0, -0.002, 2.4), 0.07, LED_RED, p, extrude=0.001)
+
+
+def gold_piggy(x):
+    p = prop("GoldPiggyBank", x)
+    sphere("PiggyBody", 0.12, (0, 0, 0.14), (1, 1.3, 0.95), GOLD, p)
+    tube("PiggySnout", 0.04, (0, -0.15, 0.15), (0, -0.19, 0.15), GOLD, p)
+    for sx in (-1, 1):
+        sphere("Nostril", 0.008, (sx * 0.015, -0.192, 0.15), (1, 1, 1), PLASTIC_BLK, p, outline=False)
+        cone("PiggyEar", 0.03, 0, 0.05, (sx * 0.06, -0.08, 0.26), GOLD, p, rot=(R(-20), sx * R(20), 0))
+        sphere("PiggyEye", 0.012, (sx * 0.04, -0.14, 0.2), (1, 1, 1), PLASTIC_BLK, p, outline=False)
+        for sy in (-1, 1):
+            tube("PiggyLeg", 0.03, (sx * 0.07, sy * 0.08, 0.06), (sx * 0.07, sy * 0.08, 0.0), GOLD, p)
+    cube("CoinSlot", 1, (0, 0.02, 0.254), (0.05, 0.008, 0.004), PLASTIC_BLK, p, bevel=0, outline=False)
+    tube("Coin", 0.025, (0, 0.02, 0.27), (0, 0.025, 0.27), GOLD, p, outline=False)
+
+
+def bull_bear_bookends(x):
+    p = prop("BullBearBookends", x)
+    for sx, m in ((-1, BRONZE), (1, M("Metal", "Silver", (0.7, 0.7, 0.72), 0.3, 1.0))):
+        cube("BookendBase", 1, (sx * 0.3, 0, 0.02), (0.15, 0.15, 0.04), MARBLE_BLK, p, bevel=0.005)
+        cube("BookendBack", 1, (sx * 0.23, 0, 0.12), (0.02, 0.15, 0.2), MARBLE_BLK, p, bevel=0.005)
+        sphere("BeastBody", 0.07, (sx * 0.32, 0, 0.11), (1.3, 0.7, 0.8), m, p)
+        sphere("BeastHead", 0.04, (sx * 0.4, 0, 0.15), (1, 0.9, 1), m, p)
+        if sx < 0:  # bull horns point up
+            for sy in (-1, 1):
+                cone("Horn", 0.012, 0, 0.05, (-0.42, sy * 0.03, 0.2), IVORY, p, rot=(sy * R(-30), 0, 0))
+        else:  # bear ears
+            for sy in (-1, 1):
+                sphere("BearEar", 0.015, (0.4, sy * 0.025, 0.19), (1, 1, 1), m, p, outline=False)
+    colors = [(0.6, 0.1, 0.1), (0.1, 0.2, 0.5), (0.1, 0.4, 0.2), (0.4, 0.3, 0.1), (0.1, 0.1, 0.1), (0.5, 0.4, 0.2)]
+    for k, col in enumerate(colors):
+        cube("Book", 1, (-0.18 + k * 0.07, 0, 0.14), (0.06, 0.14, 0.2 + rng.uniform(-0.02, 0.03)),
+             M("Leather", "Book%d" % k, col, 0.6), p, bevel=0.005)
+
+
+def ceiling_light(x):
+    p = prop("CeilingLight", x)
+    cube("LightHousing", 1, (0, 0, 3.0), (1.2, 0.3, 0.06), ALU, p, bevel=0.01)
+    cube("LightDiffuser", 1, (0, 0, 2.965), (1.15, 0.26, 0.01), CEIL_PANEL, p, bevel=0, outline=False)
+    for sx in (-1, 1):
+        tube("LightCable", 0.003, (sx * 0.5, 0, 3.03), (sx * 0.5, 0, 3.6), DARKMETAL, p, outline=False)
+
+
+def pendant_lamp(x):
+    p = prop("PendantLamp", x)
+    tube("PendantCord", 0.005, (0, 0, 3.0), (0, 0, 2.2), PLASTIC_BLK, p, outline=False)
+    cone("PendantShade", 0.25, 0.05, 0.25, (0, 0, 2.08), M("Metal", "Copper", (0.85, 0.45, 0.25), 0.25, 1.0), p)
+    sphere("PendantBulb", 0.06, (0, 0, 1.96), (1, 1, 1.2), BULB, p, outline=False)
+    cone("PendantCanopy", 0.06, 0.04, 0.03, (0, 0, 2.99), PLASTIC_BLK, p)
+
+
+def air_hockey(x):
+    p = prop("AirHockey", x)
+    cube("AHBody", 1, (0, 0, 0.45), (1.2, 2.2, 0.35), M("Plastic", "AHBlue", (0.1, 0.25, 0.7), 0.3), p, bevel=0.03)
+    cube("AHTop", 1, (0, 0, 0.63), (1.05, 2.05, 0.01), PLASTIC_WHT, p, bevel=0, outline=False)
+    for sx in (-1, 1):
+        cube("AHRail", 1, (sx * 0.56, 0, 0.66), (0.06, 2.2, 0.06), PLASTIC_BLK, p, bevel=0.01)
+        cube("AHGoal", 1, (0, sx * 1.08, 0.64), (0.35, 0.04, 0.03), PLASTIC_BLK, p, bevel=0.005, outline=False)
+        tube("Mallet", 0.06, (0, sx * 0.7, 0.64), (0, sx * 0.7, 0.67), PLASTIC_RED, p)
+        tube("MalletKnob", 0.025, (0, sx * 0.7, 0.67), (0, sx * 0.7, 0.72), PLASTIC_RED, p, outline=False)
+    cube("AHCenter", 1, (0, 0, 0.637), (1.05, 0.02, 0.003), PLASTIC_RED, p, bevel=0, outline=False)
+    torus("AHCircle", 0.2, 0.008, (0, 0, 0.637), PLASTIC_RED, p, scale=(1, 1, 0.1), outline=False)
+    tube("Puck", 0.04, (0.2, 0.3, 0.635), (0.2, 0.3, 0.65), PLASTIC_BLK, p, outline=False)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            cube("AHLeg", 1, (sx * 0.45, sy * 0.9, 0.14), (0.1, 0.1, 0.28), PLASTIC_BLK, p, bevel=0.01)
+    cube("AHScore", 1, (0.56, 0, 0.9), (0.06, 0.5, 0.25), PLASTIC_BLK, p, bevel=0.01)
+    text("AHScoreText", "7  3", (0.595, 0, 0.9), 0.08, LED_RED, p, rot=(R(90), 0, R(90)), extrude=0.001)
+
+
+def cue_rack(x):
+    p = prop("CueRack", x)
+    cube("CueRackBack", 1, (0, 0.03, 1.4), (0.8, 0.04, 1.4), WALNUT, p, bevel=0.01)
+    cube("CueRackTop", 1, (0, -0.03, 1.95), (0.8, 0.1, 0.04), WALNUT, p, bevel=0.01)
+    cube("CueRackBottom", 1, (0, -0.03, 0.75), (0.8, 0.12, 0.06), WALNUT, p, bevel=0.01)
+    for k in range(6):
+        cx = -0.3 + k * 0.12
+        tube("RackedCue", 0.012, (cx, -0.04, 0.78), (cx, -0.04, 2.0), OAK, p, r2=0.006, outline=False)
+        tube("CueWrap", 0.014, (cx, -0.04, 0.95), (cx, -0.04, 1.2), PLASTIC_BLK, p, outline=False)
+    cube("ChalkShelf", 1, (0, -0.06, 1.3), (0.5, 0.06, 0.02), WALNUT, p, bevel=0.005)
+    for k in range(3):
+        cube("RackChalk", 1, (-0.15 + k * 0.15, -0.06, 1.325), (0.025, 0.025, 0.025),
+             M("SmoothPlastic", "Chalk", (0.2, 0.45, 0.85), 0.8), p, bevel=0.003, outline=False)
+
+
+def side_table(x):
+    p = prop("SideTable", x)
+    tube("STTop", 0.3, (0, 0, 0.58), (0, 0, 0.62), MARBLE, p)
+    tube("STStem", 0.03, (0, 0, 0.05), (0, 0, 0.58), GOLD, p, outline=False)
+    cone("STBase", 0.2, 0.15, 0.05, (0, 0, 0.025), GOLD, p)
+    cone("STLampShade", 0.12, 0.08, 0.15, (0.1, 0.05, 0.95), LAMPSHADE, p)
+    tube("STLampBody", 0.06, (0.1, 0.05, 0.62), (0.1, 0.05, 0.85), CERAMIC, p, r2=0.03)
+    sphere("STLampGlow", 0.03, (0.1, 0.05, 0.88), (1, 1, 1), BULB, p, outline=False)
+    cube("STBook", 1, (-0.1, -0.08, 0.64), (0.18, 0.24, 0.03), M("Leather", "Book0", (0.6, 0.1, 0.1), 0.6), p, bevel=0.005)
+    cube("STBook2", 1, (-0.1, -0.08, 0.67), (0.16, 0.22, 0.025), M("Leather", "Book1", (0.1, 0.2, 0.5), 0.6), p,
+         rot=(0, 0, R(10)), bevel=0.005)
+
+
+def water_pallet(x):
+    p = prop("WaterBottlePallet", x)
+    cube("Pallet", 1, (0, 0, 0.06), (1.0, 0.8, 0.12), OAK, p, bevel=0.005)
+    for k in range(3):
+        cube("PalletSlat", 1, (0, -0.3 + k * 0.3, 0.13), (1.0, 0.12, 0.02), OAK, p, bevel=0.003, outline=False)
+    blue = M("Glass", "WaterJug", (0.3, 0.55, 0.95), 0.05)
+    for i in range(3):
+        for j in range(2):
+            for lvl in range(2):
+                bx, by, bz = -0.33 + i * 0.33, -0.18 + j * 0.36, 0.3 + lvl * 0.38
+                tube("Jug", 0.14, (bx, by, bz - 0.15), (bx, by, bz + 0.12), blue, p, outline=False)
+                tube("JugCap", 0.04, (bx, by, bz + 0.12), (bx, by, bz + 0.18), NEON_BLUE if lvl else blue, p, outline=False)
+
+
+def calculator(x):
+    p = prop("DeskCalculator", x)
+    cube("CalcBody", 1, (0, 0, 0.015), (0.16, 0.22, 0.03), PLASTIC_GRY, p, bevel=0.008)
+    cube("CalcDisplay", 1, (0, -0.07, 0.031), (0.13, 0.05, 0.002), M("SmoothPlastic", "LCD", (0.6, 0.7, 0.55), 0.3), p,
+         bevel=0, outline=False)
+    text("CalcNum", "1000000", (0, -0.07, 0.033), 0.03, PLASTIC_BLK, p, rot=(0, 0, 0), extrude=0.001)
+    for r in range(4):
+        for c in range(4):
+            cube("CalcKey", 1, (-0.05 + c * 0.033, -0.02 + r * 0.03, 0.033), (0.025, 0.022, 0.008),
+                 PLASTIC_RED if (r, c) == (3, 3) else PLASTIC_BLK, p, bevel=0.003, outline=False)
+    cube("TapeRoll", 1, (0, 0.13, 0.05), (0.08, 0.05, 0.05), PAPER, p, bevel=0.02)
+
+
+BUILDERS_6 = [trading_rig, gold_wolf, big_letters, server_rack, phone_booth, espresso_bar, money_gun, gold_toilet,
+              security_camera, desk_fan, newspaper_stack, fruit_bowl, recycling_bins, fire_alarm, elevator_panel, gold_piggy,
+              bull_bear_bookends, ceiling_light, pendant_lamp, air_hockey, cue_rack, side_table, water_pallet, calculator]
+
+
 def extra_decor(x):
     """Variants of the parametric builders so the office has more than one of each look."""
     neon_sign(x, "NeonSignMoney", "MONEY NEVER SLEEPS", NEON_GOLD)
@@ -1677,7 +2130,7 @@ BUILDERS = [office_chair, desk_set, sofa, coffee_table, plant_fiddle, plant_snak
 
 if __name__ == "__main__":
     x = 0.0
-    for b in BUILDERS + BUILDERS_2 + BUILDERS_3 + BUILDERS_4 + BUILDERS_5:
+    for b in BUILDERS + BUILDERS_2 + BUILDERS_3 + BUILDERS_4 + BUILDERS_5 + BUILDERS_6:
         b(x)
         x += 4.0
     x = extra_decor(x)
