@@ -7,7 +7,7 @@
 1. In Roblox Studio: **File > Open from File** and pick `WolvesWithYourFriends.rbxl`.
 2. **File > Publish to Roblox**. The AI and voice features only work in a published game.
 3. **Game Settings > Communication**: turn on **Enable Microphone** (and voice chat).
-4. In the Explorer select **VoiceChatService** and set **UseAudioApi** to **Enabled**.
+4. VoiceChatService.UseAudioApi is already set to Enabled in the place file.
 5. **Game Settings > Places**: set the server size to **10**.
 6. Press **Play**, or use **Test > Clients and Servers** with 2+ players to try Take Over Call.
 

@@ -3,18 +3,26 @@
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {
-      "Shared": { "$path": "src/shared" }
+      "Shared": {
+        "$path": "src/shared"
+      }
     },
     "ServerScriptService": {
-      "Server": { "$path": "src/server" }
+      "Server": {
+        "$path": "src/server"
+      }
     },
     "StarterPlayer": {
       "StarterPlayerScripts": {
-        "Client": { "$path": "src/client" }
+        "Client": {
+          "$path": "src/client"
+        }
       }
     },
     "Players": {
-      "$properties": { "CharacterAutoLoads": true }
+      "$properties": {
+        "CharacterAutoLoads": true
+      }
     },
     "Lighting": {
       "$properties": {
@@ -25,7 +33,16 @@
       },
       "Atmosphere": {
         "$className": "Atmosphere",
-        "$properties": { "Density": 0.28, "Haze": 1.4, "Glare": 0.6 }
+        "$properties": {
+          "Density": 0.28,
+          "Haze": 1.4,
+          "Glare": 0.6
+        }
+      }
+    },
+    "VoiceChatService": {
+      "$properties": {
+        "UseAudioApi": "Enabled"
       }
     }
   }
