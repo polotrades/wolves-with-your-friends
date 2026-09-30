@@ -23,6 +23,10 @@ Net.Spawn.OnServerEvent:Connect(function(player)
 	joined[player] = true
 	player.CharacterAdded:Connect(function(char)
 		local hum = char:WaitForChild("Humanoid") :: Humanoid
+		-- no usernames or health bars over anyone's head
+		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		hum.NameDisplayDistance = 0
+		hum.HealthDisplayDistance = 0
 		hum.Died:Connect(function()
 			task.wait(4)
 			if player.Parent then

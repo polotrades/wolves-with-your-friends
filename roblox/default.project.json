@@ -19,7 +19,9 @@
         }
       },
       "$properties": {
-        "CameraMode": "LockFirstPerson"
+        "CameraMode": "LockFirstPerson",
+        "NameDisplayDistance": 0,
+        "HealthDisplayDistance": 0
       }
     },
     "Players": {
