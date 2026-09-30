@@ -219,7 +219,7 @@ local function canned(call, text: string)
 	local asked
 	for _, d in Deals.list do
 		if t:find(d.secretLabel:lower()) or (d.id == "account" and t:find("account")) or (d.id == "tradelink" and t:find("pin"))
-			or (d.id == "pennystock" and t:find("code")) then
+			or (d.id == "pennystock" and t:find("code")) or (d.id == "card" and t:find("card")) then
 			asked = d
 			break
 		end

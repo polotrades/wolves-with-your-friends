@@ -65,6 +65,15 @@ The owner prefers **quality over speed** and wants **models built in Blender fir
 - Usernames hidden.
 - Rings show a yellow outline and a countdown with **no arrows**, and any computer can be used.
 
+## In progress: step 1 (work in progress, source does not run yet)
+Written: new `Window.lua` (min/max/close, drag, snap, resize; `Window.new(host, opts)`, a new signature),
+`State.lua`, `FileSystem.lua`, `Wallpapers.lua`, `Avatar.lua`, `shared/Catalog.lua` (Shark Mart), the new remotes in
+`Net.lua`, the Card Verify deal, caller looks/traits in `Clients.lua`, and `PitchScripts.suggest`.
+Still to write: the `Desktop.lua` rewrite (start menu, taskbar, info, notifications, `Desktop.window(appId, ...)`),
+the updated callers of the new Window API (Phone, Deal, Script apps), the new apps, `DeskMirror.lua`, and the server
+side (`Shop.lua`, Request Access, upgrade effects, PumpAds, bank, DeskState relay).
+`WolvesWithYourFriends.rbxl` has NOT been rebuilt from this source; it is still the last working build.
+
 ## Still to do (in this order)
 1. **Windows-style computer (big).** Shark OS should look like a real Windows-like desktop with no Microsoft
    branding:

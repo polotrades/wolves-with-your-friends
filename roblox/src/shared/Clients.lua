@@ -170,6 +170,46 @@ Clients.list = {
 		quirk = "Is this line secure? Say the password. There is no password. Good." },
 }
 
+-- One-line read on each caller for the Phone app ("sounds like they believe anything") and their cartoon look:
+-- skin tone, hair color and hair style (bald | short | long | bun | cap | hat | spiky | curly).
+Clients.looks = {
+	grandpa = { trait = "sounds like they believe anything", skin = 2, hair = Color3.fromRGB(230, 230, 235), style = "bald" },
+	celebrity = { trait = "sounds like they need to feel famous", skin = 3, hair = Color3.fromRGB(240, 200, 90), style = "spiky" },
+	billionaire = { trait = "sounds impossible to impress", skin = 1, hair = Color3.fromRGB(60, 40, 30), style = "bun" },
+	influencer = { trait = "sounds like they'd buy anything that goes viral", skin = 2, hair = Color3.fromRGB(255, 140, 200), style = "long" },
+	conspiracy = { trait = "sounds suspicious of literally everything", skin = 1, hair = Color3.fromRGB(120, 90, 60), style = "cap" },
+	founder = { trait = "sounds like they love buzzwords", skin = 4, hair = Color3.fromRGB(25, 20, 20), style = "long" },
+	sportsstar = { trait = "sounds competitive, wants to win", skin = 5, hair = Color3.fromRGB(20, 15, 15), style = "short" },
+	aussiegran = { trait = "sounds sweet but sharp as a tack", skin = 1, hair = Color3.fromRGB(210, 200, 230), style = "curly" },
+	lord = { trait = "sounds like old money, loves manners", skin = 1, hair = Color3.fromRGB(200, 200, 200), style = "short" },
+	dentist = { trait = "sounds careful and asks lots of questions", skin = 2, hair = Color3.fromRGB(90, 60, 40), style = "short" },
+	sailor = { trait = "sounds easily distracted by boats", skin = 3, hair = Color3.fromRGB(240, 240, 240), style = "cap" },
+	yogi = { trait = "sounds calm, hates pressure", skin = 4, hair = Color3.fromRGB(40, 30, 30), style = "bun" },
+	cowboy = { trait = "sounds slow to trust, loyal once won", skin = 3, hair = Color3.fromRGB(110, 70, 40), style = "hat" },
+	chef = { trait = "sounds dramatic, loves compliments", skin = 2, hair = Color3.fromRGB(30, 25, 25), style = "curly" },
+	ghosthunter = { trait = "sounds like they believe in ghosts AND deals", skin = 1, hair = Color3.fromRGB(80, 40, 120), style = "long" },
+	catlady = { trait = "sounds like the cats make the decisions", skin = 2, hair = Color3.fromRGB(190, 190, 200), style = "bun" },
+	gymbro = { trait = "sounds hyped, wants GAINS", skin = 3, hair = Color3.fromRGB(230, 180, 90), style = "short" },
+	diva = { trait = "sounds dramatic, wants a standing ovation", skin = 4, hair = Color3.fromRGB(60, 20, 30), style = "long" },
+	farmer = { trait = "sounds slow and careful with money", skin = 3, hair = Color3.fromRGB(180, 120, 60), style = "hat" },
+	magician = { trait = "sounds easily amazed", skin = 2, hair = Color3.fromRGB(20, 20, 30), style = "hat" },
+	spy = { trait = "sounds paranoid, trusts no one", skin = 1, hair = Color3.fromRGB(70, 70, 75), style = "short" },
+}
+
+Clients.SKINS = {
+	Color3.fromRGB(255, 219, 185),
+	Color3.fromRGB(240, 195, 160),
+	Color3.fromRGB(215, 160, 115),
+	Color3.fromRGB(170, 115, 75),
+	Color3.fromRGB(110, 70, 45),
+}
+
+function Clients.look(c)
+	local l = Clients.looks[c.id] or { trait = "sounds like an ordinary person", skin = 2, hair = Color3.fromRGB(80, 60, 40),
+		style = "short" }
+	return { trait = l.trait, skin = Clients.SKINS[l.skin] or Clients.SKINS[2], hair = l.hair, style = l.style }
+end
+
 function Clients.displayName(c): string
 	return string.format('%s "%s" %s', c.name, c.nickname, c.surname)
 end

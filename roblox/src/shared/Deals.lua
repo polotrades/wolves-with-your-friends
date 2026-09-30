@@ -36,6 +36,17 @@ Deals.list = {
 		payout = 600,
 		color = Color3.fromRGB(240, 170, 20),
 	},
+	{
+		id = "card",
+		app = "Card Verify",
+		title = "Card Verify",
+		subtitle = "Verify the client's Wolf Card to unlock VIP trading.",
+		field = "Wolf Card number (####-####-####)",
+		secretLabel = "Wolf Card number",
+		pattern = "####-####-####",
+		payout = 350,
+		color = Color3.fromRGB(120, 60, 200),
+	},
 }
 
 Deals.byId = {}

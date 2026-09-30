@@ -21,6 +21,14 @@ local NAMES = {
 	"Ring", -- server -> all: (deskId, position, ringing) for the HUD arrow
 	"Chairman", -- server -> all: The Chairman's announcements
 	"DeskOpen", -- server -> player: you sat at a computer with no call on it (deskId)
+	"DeskState", -- player -> server: a compact copy of your Shark OS desktop, drawn on your monitor for passers-by
+	"Buy", -- player -> server: Shark Mart item id
+	"Owned", -- server -> player: { [id] = count }
+	"Bank", -- player -> server: deposit this much Personal money into the firm
+	"RequestAccess", -- player -> server: ask the caller for remote access to their computer
+	"RemoteAccess", -- server -> player: { state = "granted" | "denied" | "ended", name, seconds }
+	"PumpAds", -- player -> server: (stockIndex, budget) launch an ad campaign
+	"PumpResult", -- server -> player: { stock, spent, returned }
 }
 
 local Net = {}
