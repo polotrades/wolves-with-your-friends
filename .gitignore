@@ -2,3 +2,4 @@ blender/renders/
 *.blend1
 __pycache__/
 roblox/sourcemap.json
+blender/props_part*.blend

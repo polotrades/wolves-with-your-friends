@@ -2128,21 +2128,38 @@ def extra_decor(x):
 BUILDERS = [office_chair, desk_set, sofa, coffee_table, plant_fiddle, plant_snake, plant_palm, trash_bin, water_cooler,
             cash_stack, gold_bull, office_door]
 
-if __name__ == "__main__":
-    x = 0.0
-    for b in BUILDERS + BUILDERS_2 + BUILDERS_3 + BUILDERS_4 + BUILDERS_5 + BUILDERS_6:
-        b(x)
-        x += 4.0
-    x = extra_decor(x)
+def jobs():
+    """Every prop as (slots, build(x)). Paintings/poses/variants are wrapped so parts can split the list evenly."""
+    out = [(1, b) for b in BUILDERS + BUILDERS_2 + BUILDERS_3 + BUILDERS_4 + BUILDERS_5 + BUILDERS_6]
+    out.append((4, extra_decor))
     for pose, curls in POSES.items():
-        hand_pose(x, pose, curls)
-        x += 4.0
-    painting(x, "PaintingBull", [(0, 0, 0.22, (0.9, 0.6, 0.1)), (-0.28, 0.12, 0.12, (0.1, 0.1, 0.1)),
-                                 (0.3, -0.15, 0.1, (0.85, 0.1, 0.1))])
-    painting(x + 4, "PaintingAbstract", [(-0.25, 0.08, 0.2, (0.1, 0.3, 0.8)), (0.2, -0.05, 0.25, (1.0, 0.8, 0.1)),
-                                         (0.05, 0.18, 0.1, (0.9, 0.2, 0.4)), (-0.35, -0.2, 0.08, (0.1, 0.7, 0.4))])
-    painting(x + 8, "PaintingSunset", [(0, -0.1, 0.3, (1.0, 0.45, 0.1)), (-0.3, 0.2, 0.12, (0.9, 0.2, 0.5)),
-                                       (0.3, 0.15, 0.1, (1.0, 0.9, 0.4))])
-    studio(cam_loc=(0, -10, 2.5), target=(0, 0, 0.8), lens=36)
-    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(D, "props.blend"))
+        out.append((1, lambda x, pose=pose, curls=curls: hand_pose(x, pose, curls)))
+    out.append((1, lambda x: painting(x, "PaintingBull", [(0, 0, 0.22, (0.9, 0.6, 0.1)), (-0.28, 0.12, 0.12, (0.1, 0.1, 0.1)),
+                                                          (0.3, -0.15, 0.1, (0.85, 0.1, 0.1))])))
+    out.append((1, lambda x: painting(x, "PaintingAbstract", [(-0.25, 0.08, 0.2, (0.1, 0.3, 0.8)),
+                                                              (0.2, -0.05, 0.25, (1.0, 0.8, 0.1)),
+                                                              (0.05, 0.18, 0.1, (0.9, 0.2, 0.4)),
+                                                              (-0.35, -0.2, 0.08, (0.1, 0.7, 0.4))])))
+    out.append((1, lambda x: painting(x, "PaintingSunset", [(0, -0.1, 0.3, (1.0, 0.45, 0.1)), (-0.3, 0.2, 0.12, (0.9, 0.2, 0.5)),
+                                                            (0.3, 0.15, 0.1, (1.0, 0.9, 0.4))])))
+    return out
+
+
+if __name__ == "__main__":
+    # python3 props.py            -> builds everything into props.blend (slow: Blender slows down as the scene fills up)
+    # python3 props.py --part i n -> builds every n-th prop into props_part<i>.blend; merge_props.py joins the parts
+    part = None
+    if "--part" in sys.argv:
+        k = sys.argv.index("--part")
+        part = (int(sys.argv[k + 1]), int(sys.argv[k + 2]))
+    x = 0.0
+    for idx, (slots, build) in enumerate(jobs()):
+        if part is None or idx % part[1] == part[0]:
+            build(x)
+        x += 4.0 * slots
+    if part is None:
+        studio(cam_loc=(0, -10, 2.5), target=(0, 0, 0.8), lens=36)
+        bpy.ops.wm.save_as_mainfile(filepath=os.path.join(D, "props.blend"))
+    else:
+        bpy.ops.wm.save_as_mainfile(filepath=os.path.join(D, "props_part%d.blend" % part[0]))
     print("DONE")
