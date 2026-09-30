@@ -18,7 +18,7 @@ function Config.quotaFor(day: number): number
 end
 
 -- Calls
-Config.RING_TIMEOUT = 8 -- seconds a desk rings before the call jumps to another desk
+Config.RING_TIMEOUT = 15 -- seconds a desk rings before the call jumps to another desk
 Config.RING_MAX_JUMPS = 3 -- after this many jumps the client gives up
 Config.RING_GAP_MIN = 5 -- seconds between new calls
 Config.RING_GAP_MAX = 12
@@ -33,6 +33,12 @@ Config.TTS_MAX_CHARS = 300 -- Roblox text-to-speech limit per request
 -- Money
 Config.VOTE_BONUS = 500 -- funniest-moment winner
 Config.TARGET_BONUS = 100 -- every player, when the target is met
+
+-- Art: the office is built from blender/office_scene.py's layout (OfficeLayout.lua) in Blender meters.
+Config.STUDS_PER_METER = 3.0 -- a Roblox character is ~5.3 studs, a person ~1.8 m
+-- Imported prop models (ServerStorage.PropModels) are scaled and turned automatically. If every prop ends up
+-- facing backwards after an import, set this to 180.
+Config.PROP_TURN_DEGREES = 0
 
 -- Optional sound asset ids (Creator Store). Leave "" to skip.
 Config.RING_SOUND_ID = ""

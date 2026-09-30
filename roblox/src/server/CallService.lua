@@ -41,14 +41,40 @@ local function filter(player: Player, text: string): string?
 	return ok and result or nil
 end
 
+-- yellow outline around the desk and its chair while it rings (Highlights are created on demand:
+-- Roblox only draws a limited number at once)
+local function setOutline(desk, on: boolean)
+	for _, h in desk.outlines or {} do
+		h:Destroy()
+	end
+	desk.outlines = {}
+	if not on then
+		return
+	end
+	for _, target in { desk.model, desk.chair } do
+		if target then
+			local h = Instance.new("Highlight")
+			h.FillTransparency = 0.85
+			h.FillColor = Color3.fromRGB(255, 210, 40)
+			h.OutlineColor = Color3.fromRGB(255, 210, 40)
+			h.DepthMode = Enum.HighlightDepthMode.Occluded
+			h.Adornee = target
+			h.Parent = desk.model
+			table.insert(desk.outlines, h)
+		end
+	end
+end
+
 local function setRinging(desk, on: boolean)
 	if not on and desk.ringTag.Enabled then
 		NPCGuide.announce(desk, false)
 	end
-	desk.lamp.Color = on and Color3.fromRGB(255, 40, 40) or Color3.fromRGB(80, 80, 80)
-	desk.light.Enabled = on
+	setOutline(desk, on)
 	desk.ringTag.Enabled = on
+	desk.incoming.Visible = on
+	desk.monitor:SetAttribute("Ringing", on)
 	desk.answer.Enabled = on
+	desk.use.Enabled = not on and desk.state ~= "active"
 	local sound = desk.monitor:FindFirstChild("Ring") :: Sound?
 	if sound then
 		if on then
@@ -122,6 +148,13 @@ local function ringAt(desk, pending)
 	desk.pending = pending
 	setRinging(desk, true)
 	NPCGuide.announce(desk)
+	task.spawn(function() -- seconds left on the ring pill
+		local ends = os.clock() + Config.RING_TIMEOUT
+		while desk.state == "ringing" and desk.pending == pending do
+			desk.ringTag.Frame.Count.Text = math.max(0, math.ceil(ends - os.clock())) .. "s"
+			task.wait(0.25)
+		end
+	end)
 	task.delay(Config.RING_TIMEOUT, function()
 		if desk.state ~= "ringing" or desk.pending ~= pending then
 			return
@@ -179,6 +212,7 @@ function CallService.endCall(call, reason: string)
 	desk.state = "idle"
 	desk.call = nil
 	desk.takeover.Enabled = false
+	desk.use.Enabled = true
 	updateMirror(desk)
 	if call.operator.Parent then
 		Net.CallClosed:FireClient(call.operator, { reason = reason })
@@ -208,6 +242,7 @@ function CallService.answer(player: Player, desk)
 	desk.state = "active"
 	desk.call = call
 	desk.takeover.Enabled = true
+	desk.use.Enabled = false
 	activeCalls[player] = call
 	ClientAI.start(call)
 	Economy.countCall(player)
@@ -327,6 +362,13 @@ function CallService.init(office)
 		end)
 		desk.takeover.Triggered:Connect(function(player)
 			CallService.takeover(player, desk)
+		end)
+		-- any computer works: sit down and use the apps even when nothing is ringing
+		desk.use.Triggered:Connect(function(player)
+			if desk.state == "idle" and not activeCalls[player] then
+				seat(player, desk)
+				Net.DeskOpen:FireClient(player, desk.id)
+			end
 		end)
 	end
 	Net.Say.OnServerEvent:Connect(onSay)

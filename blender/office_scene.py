@@ -14,7 +14,8 @@ from mathutils import Vector
 
 D = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, D)
-from lib import cube, mat, render, text  # noqa: E402
+import bmesh  # noqa: E402
+from lib import finish, mat, render  # noqa: E402
 
 R = math.radians
 rng = random.Random(11)
@@ -27,6 +28,58 @@ TEMPLATES = [o for o in sc.objects if o.type == "EMPTY" and o.parent is None]
 CEILING_STUFF = []  # hidden in the bird's-eye views
 
 
+_UNIT_CUBE = None
+# Everything placed at scene level is also recorded here and written to roblox/src/shared/OfficeLayout.lua,
+# so the Roblox office is built from exactly this layout (Blender meters, Z up; the game converts to studs).
+LAYOUT = {"parts": [], "props": [], "screens": [], "tickers": [], "signs": [], "lights": [], "chaos": [], "points": {}}
+RECORD = [True]
+
+
+def cube(name, size, loc, scale=(1, 1, 1), material=None, parent=None, rot=(0, 0, 0), bevel=0.02, **kw):
+    """Same as lib.cube, but built straight from mesh data: bpy.ops primitives crawl in a scene this big."""
+    global _UNIT_CUBE
+    if _UNIT_CUBE is None:
+        bm = bmesh.new()
+        bmesh.ops.create_cube(bm, size=1.0)
+        _UNIT_CUBE = bpy.data.meshes.new("UnitCube")
+        bm.to_mesh(_UNIT_CUBE)
+        bm.free()
+    me = _UNIT_CUBE.copy()  # own copy: finish() appends materials to the mesh
+    o = bpy.data.objects.new(name, me)
+    sc.collection.objects.link(o)
+    o.location = loc
+    o.rotation_euler = rot
+    o.scale = tuple(v * size for v in scale)
+    if bevel:
+        b = o.modifiers.new("Bevel", "BEVEL")
+        b.width = bevel
+        b.segments = 3
+    kw.setdefault("smooth", False)
+    if parent is None and RECORD[0]:
+        LAYOUT["parts"].append({"n": name, "p": tuple(loc), "s": tuple(v * size for v in scale), "r": rot[2],
+                                "m": material.name if material else "SceneWall"})
+    return finish(o, material, parent, **kw)
+
+
+def text(name, body, loc, size, material, parent=None, rot=(R(90), 0, 0), extrude=0.004):
+    cu = bpy.data.curves.new(name, "FONT")
+    cu.body = body
+    cu.size = size
+    cu.extrude = extrude
+    cu.align_x = "CENTER"
+    cu.align_y = "CENTER"
+    cu.materials.append(material)
+    o = bpy.data.objects.new(name, cu)
+    sc.collection.objects.link(o)
+    o.location = loc
+    o.rotation_euler = rot
+    if parent:
+        o.parent = parent
+    elif name == "TickerText":
+        LAYOUT["tickers"].append({"p": tuple(loc), "r": rot[2], "len": 18.0})
+    return o
+
+
 def kids(o):
     out = []
     for c in o.children:
@@ -35,7 +88,7 @@ def kids(o):
     return out
 
 
-def place(name, loc, rot=0.0, scale=1.0, ceiling=False):
+def place(name, loc, rot=0.0, scale=1.0, ceiling=False, record=True):
     """Linked copy of a prop template. rot turns the prop's front (-Y) around Z: 0 = faces -Y, pi = +Y,
     R(90) = +X, R(-90) = -X."""
     root = bpy.data.objects.get(name)
@@ -56,6 +109,8 @@ def place(name, loc, rot=0.0, scale=1.0, ceiling=False):
     new_root.scale = (scale, scale, scale)
     if ceiling:
         CEILING_STUFF.append(new_root)
+    if record and RECORD[0]:
+        LAYOUT["props"].append({"n": name, "p": tuple(loc), "r": rot, "s": scale})
     return new_root
 
 
@@ -109,7 +164,15 @@ for sy in (-1, 1):
 cube("WindowWallE", 1, (X1, 0, H / 2), (0.05, L, H), GLASSWALL, bevel=0, outline=False)
 for y in range(int(Y0), int(Y1) + 1, 2):
     cube("Mullion", 1, (X1, y, H / 2), (0.12, 0.08, H), MULLION, bevel=0, outline=False)
-wall(X0, Y0, X0, Y1, MARBLE_BLK, 0.3)  # elevator core wall on the west
+ELEVATORS = (-5.0, 0.0, 5.0)
+edges = [Y0]
+for ey in ELEVATORS:
+    edges += [ey - 0.85, ey + 0.85]
+edges.append(Y1)
+for a, b in zip(edges[0::2], edges[1::2]):  # elevator core wall on the west, with a doorway per car
+    wall(X0, a, X0, b, MARBLE_BLK, 0.3)
+for ey in ELEVATORS:
+    cube("DoorHeader", 1, (X0, ey, (H + 2.3) / 2), (0.3, 1.7, H - 2.3), MARBLE_BLK, bevel=0, outline=False)
 
 # sunset sky + sun, soft area lights under the ceiling
 w = bpy.data.worlds.new("SunsetWorld")
@@ -132,9 +195,12 @@ for x in range(-20, 21, 8):
 
 # ---------------------------------------------------------------- helpers for rooms
 def sign(label, loc, rot=0.0):
-    place("RoomSign", loc, rot)
+    LAYOUT["signs"].append({"label": label, "p": tuple(loc), "r": rot})
+    place("RoomSign", loc, rot, record=False)
     d = Vector((math.sin(rot) * 0.025, -math.cos(rot) * 0.025, 0))
+    RECORD[0] = False
     text("SignText", label, (loc[0] + d.x, loc[1] + d.y, loc[2] + 0.12), 0.09, SIGN_INK, rot=(R(90), 0, rot))
+    RECORD[0] = True
 
 
 def glass_front(x0, x1, y, door_x):
@@ -156,6 +222,8 @@ def glass_side(x, y0, y1):
 
 def candle_screen(loc, rot, width, height, n):
     """Big wall screen with a candlestick chart. rot is the direction the screen faces, like place()."""
+    LAYOUT["screens"].append({"p": tuple(loc), "r": rot, "w": width, "h": height})
+    RECORD[0] = False
     cube("TradeScreenFrame", 1, loc, (width + 0.12, 0.08, height + 0.12), MULLION, rot=(0, 0, rot), bevel=0.01)
     right = Vector((math.cos(rot), math.sin(rot), 0))
     fwd = Vector((math.sin(rot), -math.cos(rot), 0))
@@ -174,10 +242,11 @@ def candle_screen(loc, rot, width, height, n):
              rot=(0, 0, rot), bevel=0, outline=False)
         cube("CandleBody", 1, (base.x + fwd.x * 0.01, base.y + fwd.y * 0.01, z0 + (o + c) / 2 * height),
              (step * 0.6, 0.006, max(abs(c - o) * height, 0.01)), m, rot=(0, 0, rot), bevel=0, outline=False)
+    RECORD[0] = True
 
 
 # ---------------------------------------------------------------- west: elevator lobby + reception
-for y in (-5.0, 0.0, 5.0):
+for y in ELEVATORS:
     place("ElevatorDoors", (X0 + 0.2, y, 0), R(90))
     place("ElevatorPanel", (X0 + 0.2, y + 1.2, 0), R(90))
 wall(-15.0, -4.5, -15.0, 4.5, WALNUT, 0.3)  # feature wall behind reception
@@ -202,7 +271,7 @@ place("ExitSign", (X0 + 0.2, -2.5, 0.4), R(90))
 place("SecurityCamera", (-15.5, -8.8, 0.9), R(-135), ceiling=True)
 place("FireExtinguisher", (-15.3, -5.0, 0), R(-90))
 # waiting lounge in the north-west corner
-place("Sofa", (-20.0, 15.6, 0), math.pi)
+place("Sofa", (-20.0, 15.6, 0), 0.0)
 place("Sofa", (-23.0, 12.5, 0), R(90))
 place("CoffeeTable", (-20.0, 13.2, 0))
 place("MagazineRack", (-16.0, 16.6, 0), math.pi)
@@ -250,13 +319,13 @@ flat("ChairmanRug", -14.3, -7.7, 10.6, 16.8, LOUNGE_FLOOR, 0.003)
 def exec_office(x0, x1, big):
     mid = (x0 + x1) / 2
     place("ExecutiveDesk", (mid, 14.2, 0), math.pi)
-    place("OfficeChair", (mid, 15.2, 0), math.pi, 1.15)
+    place("OfficeChair", (mid, 15.2, 0), 0.0, 1.15)
     place("BankerLamp", (mid - 0.8, 14.3, 0.79), math.pi)
     place("GoldPhone", (mid + 0.8, 14.1, 0.79), math.pi + 0.3)
     place("DeskNameplate", (mid, 13.85, 0.79), math.pi)
     place("DeskCalculator", (mid + 0.4, 14.3, 0.79), math.pi)
-    place("OfficeChair", (mid - 0.6, 12.7, 0), 0.2)
-    place("OfficeChair", (mid + 0.6, 12.7, 0), -0.2)
+    place("OfficeChair", (mid - 0.6, 12.7, 0), math.pi - 0.2)
+    place("OfficeChair", (mid + 0.6, 12.7, 0), math.pi + 0.2)
     place("Bookshelf", (x0 + 0.5, 14.5, 0), R(90))
     place("PlantFiddle", (x1 - 0.5, 16.5, 0))
     place(rng.choice(["PaintingBull", "PaintingAbstract", "PaintingSunset"]), (x0 + 0.1, 12.5, 1.0), R(90))
@@ -279,9 +348,9 @@ exec_office(-2.0, 3.5, False)
 # meeting room
 place("MeetingTable", (8.0, 13.8, 0))
 for x in (6.6, 8.0, 9.4):
-    place("OfficeChair", (x, 12.8, 0), rng.uniform(-0.2, 0.2))
-    place("OfficeChair", (x, 14.8, 0), math.pi + rng.uniform(-0.2, 0.2))
-place("OfficeChair", (10.6, 13.8, 0), R(90))
+    place("OfficeChair", (x, 12.8, 0), math.pi + rng.uniform(-0.2, 0.2))
+    place("OfficeChair", (x, 14.8, 0), rng.uniform(-0.2, 0.2))
+place("OfficeChair", (10.6, 13.8, 0), R(-90))
 place("WallTV", (12.25, 13.8, 0), R(-90))
 place("Podium", (4.6, 11.4, 0), R(40))
 place("Whiteboard", (4.2, 16.0, 0), R(120))
@@ -294,9 +363,9 @@ for pod_y in PODS:
     for i in range(10):
         x = -12.6 + i * 1.75
         place("DeskSet", (x, pod_y - 0.45, 0), 0.0)
-        place("OfficeChair", (x, pod_y - 1.3, 0), rng.uniform(-0.4, 0.4))
+        place("OfficeChair", (x, pod_y - 1.3, 0), math.pi + rng.uniform(-0.4, 0.4))
         place("DeskSet", (x, pod_y + 0.45, 0), math.pi)
-        place("OfficeChair", (x, pod_y + 1.3, 0), math.pi + rng.uniform(-0.4, 0.4))
+        place("OfficeChair", (x, pod_y + 1.3, 0), rng.uniform(-0.4, 0.4))
     cube("PodDivider", 1, (-12.6 + 4.5 * 1.75, pod_y, 1.0), (17.4, 0.05, 0.45), bpy.data.materials["Fabric_Navy"], bevel=0.01)
     place("TrashBin", (5.0, pod_y - 1.0, 0))
     place("PlantSnake", (-14.0, pod_y, 0))
@@ -362,8 +431,8 @@ foods = ["Burger", "PizzaSlice", "Donut", "Apple", "Sandwich", "SodaCan", "Banan
 for tx in (15.2, 18.2, 21.2):
     for ty in (6.2, 10.0):
         place("CafeTable", (tx, ty, 0))
-        place("CafeChair", (tx - 0.8, ty, 0), R(-90))
-        place("CafeChair", (tx + 0.8, ty, 0), R(90))
+        place("CafeChair", (tx - 0.8, ty, 0), R(90))
+        place("CafeChair", (tx + 0.8, ty, 0), R(-90))
         place("PendantLamp", (tx, ty, 0.6), 0, ceiling=True)
         place(rng.choice(foods), (tx + rng.uniform(-0.2, 0.2), ty + rng.uniform(-0.15, 0.15), 0.75), rng.uniform(0, 6.28))
 place("CoffeePuddle", (16.5, 8.2, 0), 0.7)
@@ -392,6 +461,12 @@ place("Chandelier", (16.2, -3.2, 0.6), 0, ceiling=True)
 place("CashStack", (16.0, -2.8, 0.87), 0.4)
 
 # ---------------------------------------------------------------- chaos: papers, cash, cups and food on the trading floor
+RECORD[0] = False  # the game scatters its own draggable paper and cash in these areas
+for y in (-5.35, -0.85, 3.65):
+    LAYOUT["chaos"].append({"x": (-13.0, 4.0), "y": (y - 0.4, y + 0.4)})
+LAYOUT["chaos"].append({"x": (4.8, 11.5), "y": (-9.6, 9.3)})
+LAYOUT["chaos"].append({"x": (-13.5, 11.5), "y": (-9.9, -9.2)})
+LAYOUT["chaos"].append({"x": (-13.5, 11.5), "y": (-14.0, -10.5)})
 PAPER = bpy.data.materials["SmoothPlastic_Paper"]
 CASH = bpy.data.materials["Fabric_Cash"]
 for _ in range(220):
@@ -404,6 +479,98 @@ for _ in range(220):
 for kind in ("PaperCup", "Donut", "PizzaSlice", "SodaCan", "Banana", "CashStack", "PaperCup", "Burger", "RubberChicken",
              "FoamBat", "Stapler", "PaperCup", "CashStack"):
     place(kind, (rng.uniform(-12, 4), rng.choice((-5.35, -0.85, 3.65)) + rng.uniform(-0.3, 0.3), 0), rng.uniform(0, 6.28))
+
+RECORD[0] = True
+# named spots the game needs
+LAYOUT["points"] = {
+    "spawn": {"p": (X0 + 2.0, 0.0, 0.0), "r": R(-90)},  # stepping out of the middle elevator
+    "meetingBoard": {"p": (12.2, 13.8, 1.9), "r": R(-90), "w": 1.9, "h": 1.05},
+    "meetingCenter": {"p": (8.0, 13.8, 0.0), "r": 0.0},
+    "lounge": {"p": (18.0, -6.0, 0.0), "r": 0.0},
+}
+LAYOUT["meetingSeats"] = [{"p": (x, y, 0.0), "r": r} for x in (6.6, 8.0, 9.4) for y, r in ((12.8, 0.0), (14.8, math.pi))]
+LAYOUT["floor"] = {"w": W, "l": L, "h": H}
+for o in sc.objects:
+    if o.type == "LIGHT" and o.data.type == "AREA":
+        LAYOUT["lights"].append({"p": tuple(o.location)})
+
+
+def write_layout():
+    """Emit OfficeLayout.lua with the recorded layout plus a look for every material the parts use."""
+    def v3(t):
+        return "{%s}" % ", ".join("%.3f" % v for v in t)
+
+    def srgb(c):
+        return tuple(round(255 * (x * 12.92 if x <= 0.0031308 else 1.055 * x ** (1 / 2.4) - 0.055)) for x in c)
+
+    scene_kinds = {"SceneCarpet": "Carpet", "SceneTile": "Marble", "SceneLoungeCarpet": "Carpet", "SceneCeiling": "Plaster",
+                   "SceneMullion": "Metal", "SceneGlass": "Glass", "SceneWall": "Plaster", "SceneRunner": "Carpet",
+                   "StallGrey": "SmoothPlastic", "SceneScreen": "Glass"}
+    looks = {}
+    for part in LAYOUT["parts"]:
+        m = bpy.data.materials.get(part["m"])
+        if not m or m.name in looks:
+            continue
+        b = m.node_tree.nodes.get("Principled BSDF") if m.use_nodes else None
+        col = srgb(tuple(b.inputs["Base Color"].default_value)[:3] if b else tuple(m.diffuse_color)[:3])
+        kind = scene_kinds.get(m.name) or m.name.split("_")[0]
+        looks[m.name] = (kind, col, 0.7 if m.name == "SceneGlass" else 0.0)
+    out = ["-- Generated by blender/office_scene.py. Do not edit by hand: move things in Blender and re-run.",
+           "-- Units are Blender meters with Z up; r = rotation around the vertical axis (radians).",
+           "return {"]
+    f = LAYOUT["floor"]
+    out.append("\tfloor = { w = %.2f, l = %.2f, h = %.2f }," % (f["w"], f["l"], f["h"]))
+    out.append("\tlooks = {")
+    for k, (kind, col, tr) in sorted(looks.items()):
+        out.append('\t\t["%s"] = { material = "%s", color = {%d, %d, %d}, transparency = %s },' % (k, kind, *col, tr))
+    out.append("\t},")
+    out.append("\tparts = {")
+    for pt in LAYOUT["parts"]:
+        out.append('\t\t{ n = "%s", p = %s, s = %s, r = %.4f, m = "%s" },' % (pt["n"], v3(pt["p"]), v3(pt["s"]), pt["r"], pt["m"]))
+    out.append("\t},")
+    out.append("\tprops = {")
+    for pr in LAYOUT["props"]:
+        out.append('\t\t{ n = "%s", p = %s, r = %.4f, s = %.3f },' % (pr["n"], v3(pr["p"]), pr["r"], pr["s"]))
+    out.append("\t},")
+    out.append("\tscreens = {")
+    for sc_ in LAYOUT["screens"]:
+        out.append("\t\t{ p = %s, r = %.4f, w = %.2f, h = %.2f }," % (v3(sc_["p"]), sc_["r"], sc_["w"], sc_["h"]))
+    out.append("\t},")
+    out.append("\ttickers = {")
+    for t in LAYOUT["tickers"]:
+        out.append("\t\t{ p = %s, r = %.4f, len = %.2f }," % (v3(t["p"]), t["r"], t["len"]))
+    out.append("\t},")
+    out.append("\tsigns = {")
+    for sg in LAYOUT["signs"]:
+        out.append('\t\t{ label = "%s", p = %s, r = %.4f },' % (sg["label"], v3(sg["p"]), sg["r"]))
+    out.append("\t},")
+    out.append("\tlights = {")
+    for lt in LAYOUT["lights"]:
+        out.append("\t\t{ p = %s }," % v3(lt["p"]))
+    out.append("\t},")
+    out.append("\tchaos = {")
+    for c in LAYOUT["chaos"]:
+        out.append("\t\t{ x = {%.2f, %.2f}, y = {%.2f, %.2f} }," % (*c["x"], *c["y"]))
+    out.append("\t},")
+    out.append("\tmeetingSeats = {")
+    for st in LAYOUT["meetingSeats"]:
+        out.append("\t\t{ p = %s, r = %.4f }," % (v3(st["p"]), st["r"]))
+    out.append("\t},")
+    out.append("\tpoints = {")
+    for k, pt in LAYOUT["points"].items():
+        extra = "".join(", %s = %.2f" % (kk, vv) for kk, vv in pt.items() if kk not in ("p", "r"))
+        out.append("\t\t%s = { p = %s, r = %.4f%s }," % (k, v3(pt["p"]), pt["r"], extra))
+    out.append("\t},")
+    out.append("}")
+    path = os.path.join(D, "..", "roblox", "src", "shared", "OfficeLayout.lua")
+    with open(path, "w") as fh:
+        fh.write("\n".join(out) + "\n")
+    print("wrote", path, len(LAYOUT["parts"]), "parts", len(LAYOUT["props"]), "props", flush=True)
+
+
+write_layout()
+if "--layout-only" in sys.argv:
+    sys.exit(0)
 
 for tpl in TEMPLATES:  # hide the template lineup
     for o in [tpl] + kids(tpl):

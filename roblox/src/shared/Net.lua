@@ -20,6 +20,7 @@ local NAMES = {
 	"Spawn", -- player -> server: leave the main menu (with the chosen look) and spawn into the tower
 	"Ring", -- server -> all: (deskId, position, ringing) for the HUD arrow
 	"Chairman", -- server -> all: The Chairman's announcements
+	"DeskOpen", -- server -> player: you sat at a computer with no call on it (deskId)
 }
 
 local Net = {}

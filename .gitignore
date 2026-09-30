@@ -3,3 +3,4 @@ blender/renders/
 __pycache__/
 roblox/sourcemap.json
 blender/props_part*.blend
+*.blend

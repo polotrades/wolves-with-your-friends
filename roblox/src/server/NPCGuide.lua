@@ -1,5 +1,5 @@
 -- No NPCs in the tower: only players. Ringing desks are announced to every player's HUD
--- (a screen-edge arrow points at the phone), and The Chairman speaks through a banner on everyone's screen.
+-- (clients can use the position to play the ring), and The Chairman speaks through a banner on everyone's screen.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Net = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Net"))
 

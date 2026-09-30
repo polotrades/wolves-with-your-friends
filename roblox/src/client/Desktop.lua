@@ -155,7 +155,7 @@ function Desktop.open(deskId: number?)
 		local cam = Workspace.CurrentCamera
 		cam.CameraType = Enum.CameraType.Scriptable
 		local front = monitor.CFrame.LookVector
-		cam.CFrame = CFrame.lookAt(monitor.Position + front * 4.5 + Vector3.new(0, 0.6, 0), monitor.Position)
+		cam.CFrame = CFrame.lookAt(monitor.Position + front * 2.4 + Vector3.new(0, 0.25, 0), monitor.Position)
 	end
 end
 
