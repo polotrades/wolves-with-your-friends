@@ -17,11 +17,14 @@
         "Client": {
           "$path": "src/client"
         }
+      },
+      "$properties": {
+        "CameraMode": "LockFirstPerson"
       }
     },
     "Players": {
       "$properties": {
-        "CharacterAutoLoads": true
+        "CharacterAutoLoads": false
       }
     },
     "Lighting": {
@@ -29,7 +32,19 @@
         "ClockTime": 17.6,
         "Brightness": 2.5,
         "EnvironmentDiffuseScale": 0.6,
-        "EnvironmentSpecularScale": 0.6
+        "EnvironmentSpecularScale": 0.6,
+        "Technology": "Future",
+        "Ambient": [
+          0.35,
+          0.3,
+          0.28
+        ],
+        "OutdoorAmbient": [
+          0.55,
+          0.45,
+          0.4
+        ],
+        "ExposureCompensation": 0.15
       },
       "Atmosphere": {
         "$className": "Atmosphere",
@@ -37,6 +52,33 @@
           "Density": 0.28,
           "Haze": 1.4,
           "Glare": 0.6
+        }
+      },
+      "Bloom": {
+        "$className": "BloomEffect",
+        "$properties": {
+          "Intensity": 0.6,
+          "Size": 28,
+          "Threshold": 1.6
+        }
+      },
+      "ColorCorrection": {
+        "$className": "ColorCorrectionEffect",
+        "$properties": {
+          "Saturation": 0.18,
+          "Contrast": 0.08,
+          "TintColor": [
+            1.0,
+            0.97,
+            0.92
+          ]
+        }
+      },
+      "SunRays": {
+        "$className": "SunRaysEffect",
+        "$properties": {
+          "Intensity": 0.06,
+          "Spread": 0.8
         }
       }
     },

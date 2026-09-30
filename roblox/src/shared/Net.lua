@@ -17,6 +17,7 @@ local NAMES = {
 	"Meeting", -- server -> all: meeting phases
 	"Vote", -- player -> server: quote index
 	"Report", -- server -> all: final statement
+	"Spawn", -- player -> server: leave the main menu and spawn into the tower
 }
 
 local Net = {}

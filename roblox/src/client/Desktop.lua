@@ -41,6 +41,8 @@ function Desktop.init()
 		UI.new("Frame", { Size = UDim2.fromScale(0.04, h), Position = UDim2.fromScale(i * 0.038, 0.94 - h),
 			BackgroundColor3 = Color3.fromRGB(35, 25, 60), BorderSizePixel = 0, Parent = wall })
 	end
+	-- Modal frees the mouse while the computer is open (the game is locked to first person)
+	UI.new("TextButton", { Size = UDim2.fromScale(0, 0), BackgroundTransparency = 1, Text = "", Modal = true, Parent = gui })
 	host = UI.new("Frame", { Name = "Windows", Size = UDim2.new(1, 0, 1, -56), BackgroundTransparency = 1, Parent = gui })
 	iconGrid = UI.new("Frame", { Name = "Icons", Size = UDim2.new(0, 220, 1, -76), Position = UDim2.fromOffset(16, 16),
 		BackgroundTransparency = 1, Parent = host })
@@ -134,7 +136,7 @@ local function bootScreen()
 	end)
 end
 
-function Desktop.open()
+function Desktop.open(deskId: number?)
 	if gui.Enabled then
 		return
 	end
@@ -145,10 +147,21 @@ function Desktop.open()
 		savedWalk, savedJump = hum.WalkSpeed, hum.JumpPower
 		hum.WalkSpeed, hum.JumpPower = 0, 0
 	end
+	-- first person: look straight at this desk's monitor while working
+	local floor = Workspace:FindFirstChild("Floor100")
+	local desk = deskId and floor and floor:FindFirstChild("Desk" .. deskId)
+	local monitor = desk and desk:FindFirstChild("Monitor") :: BasePart?
+	if monitor then
+		local cam = Workspace.CurrentCamera
+		cam.CameraType = Enum.CameraType.Scriptable
+		local front = monitor.CFrame.LookVector
+		cam.CFrame = CFrame.lookAt(monitor.Position + front * 4.5 + Vector3.new(0, 0.6, 0), monitor.Position)
+	end
 end
 
 function Desktop.close()
 	gui.Enabled = false
+	Workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
 	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 	if hum and savedWalk then
 		hum.WalkSpeed, hum.JumpPower = savedWalk, savedJump

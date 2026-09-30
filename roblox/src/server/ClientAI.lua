@@ -33,6 +33,9 @@ local function systemPrompt(profile, secrets): string
 		"You are a fictional character in a silly cartoon comedy game. A broker from Wolf & Co. is calling you",
 		"to sell you ridiculous, obviously fake investments (like banana farms on the moon).",
 		"Stay in character and be funny. Every reply is at most 2 short sentences and under 200 characters.",
+		"Always answer exactly what the broker just said first (their question, joke or claim), then add your own twist.",
+		"Never repeat something you already said in this call.",
+		profile.quirk and ("A thing you like to say: " .. profile.quirk) or "",
 		"Keep it family friendly. Never give real financial advice and never mention real companies or people.",
 		"Your private, completely made-up details: " .. table.concat(details, "; ") .. ".",
 		string.format("Each message starts with your current interest level from 0 to 100. Below %d, you are skeptical", Config.REVEAL_TRUST),
@@ -151,8 +154,57 @@ local function pick(call, pool: { string }): string
 	return line
 end
 
+-- Topics the backup lines react to, so replies follow what the broker actually said.
+local TOPICS = {
+	{ keys = { "your name", "who are you", "who is this", "who's this" },
+		lines = { "I'm %NAME%! Who are YOU, and why do you sound so excited?", "The name's %NAME%. And you are...?" } },
+	{ keys = { "how are you", "how's it going", "how you doing", "hows it going" },
+		lines = { "Me? I'm fine, I guess. Better if you get to the point.", "Could be worse. Could be better. Could be richer." } },
+	{ keys = { "money", "invest", "dollar", "cash", "price", "cost", "profit", "rich" },
+		lines = { "How much money are we talking? I keep my savings in a sock.", "Money, huh? What's the smallest amount I could lose?",
+			"Profit? Say that word again, slowly." } },
+	{ keys = { "moon", "banana" },
+		lines = { "Bananas... on the MOON? Is there even air for the bananas?", "Moon bananas. That's either genius or I need a nap." } },
+	{ keys = { "yacht", "boat", "ship" },
+		lines = { "A yacht? I get seasick in the bathtub.", "Does the yacht come with a captain? I can't steer." } },
+	{ keys = { "stock", "share", "market" },
+		lines = { "Stocks? Like soup stock? I love soup.", "Shares? I share my fries. That's about it." } },
+	{ keys = { "safe", "risk", "guarantee", "promise", "trust" },
+		lines = { "Is it safe? My last investment was a lottery ticket.", "Promise? Pinky promise? Over the phone?" } },
+	{ keys = { "joke", "funny", "haha", "lol" },
+		lines = { "Ha! You're funny. Funny people make me nervous.", "Okay that got a chuckle. Half a chuckle." } },
+	{ keys = { "boss", "chairman", "manager" },
+		lines = { "Your boss sounds terrifying. Does he yell?", "The Chairman? I hear he has a gold toilet." } },
+	{ keys = { "bye", "goodbye", "later", "hang up" },
+		lines = { "Wait, don't go! I was just getting interested!", "Leaving already? Rude. Also, fine." } },
+	{ keys = { "sorry", "apolog" },
+		lines = { "Apology accepted. Mostly.", "Okay, okay. I forgive you. This time." } },
+	{ keys = { "yes", "yeah", "yep", "sure" },
+		lines = { "Yes what? Yes to the bananas?", "Great, so we agree on something. What next?" } },
+	{ keys = { "no", "nope", "nah" },
+		lines = { "No? Then why'd you call?!", "Hmm, 'no' is a strong word for a salesman." } },
+}
+
+local STOP = {}
+for w in ("about again because could their there these those which would should really think thing things just maybe"
+	.. " hello thanks please sorry money going"):gmatch("%a+") do
+	STOP[w] = true
+end
+
+-- picks a word the broker said (5+ letters) so the client can throw it back at them
+local function echoWord(t: string): string?
+	local words = {}
+	for w in t:gmatch("%a+") do
+		if #w >= 5 and not STOP[w] then
+			table.insert(words, w)
+		end
+	end
+	return #words > 0 and words[math.random(1, #words)] or nil
+end
+
 local function canned(call, text: string)
 	local t = text:lower()
+	local name = call.profile.name
 	local delta = 3
 	if #t > 60 then
 		delta += 3
@@ -174,26 +226,54 @@ local function canned(call, text: string)
 	end
 	local newTrust = call.trust + delta
 	if asked and not rude and newTrust >= Config.REVEAL_TRUST then
-		return { reply = string.format("Oh, fine! My %s is %s. Don't tell my cat.", asked.secretLabel, call.secrets[asked.id]),
+		return { reply = string.format("Oh, fine! My %s is %s. Don't tell anyone.", asked.secretLabel, call.secrets[asked.id]),
 			interest_change = delta, hang_up = false }
 	elseif asked and not rude then
-		return { reply = "Whoa there, I barely know you. Why should I give you that?", interest_change = delta - 3, hang_up = false }
+		return { reply = string.format("My %s? Whoa, I barely know you. Earn it first.", asked.secretLabel),
+			interest_change = delta - 3, hang_up = false }
 	end
-	local pool
+	local reply
 	if rude then
-		pool = LINES.rude
+		reply = pick(call, LINES.rude)
 	elseif #call.transcript <= 2 and (t:find("hello") or t:find("^hi") or t:find("hey")) then
-		pool = LINES.greet
-	elseif t:find("%?") and math.random() < 0.4 then
-		pool = LINES.question
-	elseif newTrust < 35 then
-		pool = LINES.cold
-	elseif newTrust < Config.REVEAL_TRUST then
-		pool = LINES.warm
+		reply = pick(call, LINES.greet)
 	else
-		pool = LINES.hot
+		-- 1) react to a topic they mentioned
+		for _, topic in TOPICS do
+			for _, k in topic.keys do
+				local plain = t:find(k, 1, true)
+				local word = #k <= 3 and t:find("%f[%a]" .. k .. "%f[%A]")
+				if (#k > 3 and plain) or word then
+					reply = pick(call, topic.lines):gsub("%%NAME%%", name)
+					break
+				end
+			end
+			if reply then
+				break
+			end
+		end
+		-- 2) the client's own signature line, once per call
+		if not reply and call.profile.quirk and not call.usedLines[call.profile.quirk] and math.random() < 0.5 then
+			reply = call.profile.quirk
+			call.usedLines[reply] = true
+		end
+		-- 3) throw one of their own words back at them
+		local w = echoWord(t)
+		if not reply and w and math.random() < 0.5 then
+			reply = pick(call, {
+				string.format('"%s"? Explain "%s" to me like I\'m five.', w, w),
+				string.format('Did you just say "%s"? Now I\'m curious.', w),
+				string.format('Hmm, "%s"... my cousin tried "%s" once. Long story.', w, w),
+			})
+		end
+		if not reply and t:find("%?") then
+			reply = pick(call, LINES.question)
+		end
+		if not reply then
+			reply = pick(call, newTrust < 35 and LINES.cold or newTrust < Config.REVEAL_TRUST and LINES.warm or LINES.hot)
+		end
 	end
-	return { reply = pick(call, pool), interest_change = delta, hang_up = newTrust <= 0, offline = true }
+	return { reply = reply, interest_change = delta, hang_up = newTrust <= 0, offline = true }
 end
 
 -- Pull the JSON object out of a reply, even if the model wrapped it in extra words.

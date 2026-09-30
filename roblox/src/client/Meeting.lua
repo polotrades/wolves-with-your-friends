@@ -6,20 +6,32 @@ local Net = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Net")
 
 local Meeting = {}
 local gui
+local modal: TextButton
 
 local function clear()
 	for _, c in gui:GetChildren() do
-		c:Destroy()
+		if c ~= modal then
+			c:Destroy()
+		end
 	end
+	modal.Visible = false
+end
+
+-- panels need a free mouse in first person
+local function needMouse()
+	modal.Visible = true
 end
 
 function Meeting.init()
 	gui = UI.new("ScreenGui", { Name = "Meeting", ResetOnSpawn = false, DisplayOrder = 10,
 		Parent = Players.LocalPlayer:WaitForChild("PlayerGui") })
+	modal = UI.new("TextButton", { Size = UDim2.fromScale(0, 0), BackgroundTransparency = 1, Text = "", Modal = true,
+		Visible = false, Parent = gui })
 end
 
 local function vote(m)
 	clear()
+	needMouse()
 	local panel = UI.new("Frame", { Size = UDim2.fromOffset(640, 150 + #m.quotes * 90), Position = UDim2.new(0.5, -320, 0.5, -180),
 		BackgroundColor3 = Color3.fromRGB(245, 205, 60), Parent = gui })
 	UI.corner(panel, 12)
@@ -60,7 +72,7 @@ local function verdict(m)
 	UI.text(banner, sub, { Size = UDim2.new(1, -20, 0.25, 0), Position = UDim2.new(0, 10, 0.6, 0), Font = UI.bold })
 	task.delay(7, function()
 		if banner.Parent then
-			banner:Destroy()
+			clear()
 		end
 	end)
 end
@@ -75,6 +87,7 @@ end
 
 function Meeting.report(r)
 	clear()
+	needMouse()
 	local panel = UI.new("Frame", { Size = UDim2.fromOffset(820, 520), Position = UDim2.new(0.5, -410, 0.5, -260),
 		BackgroundColor3 = Color3.fromRGB(255, 244, 214), Parent = gui })
 	UI.corner(panel, 12)

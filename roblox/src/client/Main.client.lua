@@ -1,4 +1,4 @@
--- Client entry point: builds the HUD, Shark OS and voice, then routes server events to them.
+-- Client entry point: main menu, HUD, Shark OS and voice, then routes server events to them.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
@@ -11,6 +11,8 @@ local Desktop = require(Client:WaitForChild("Desktop"))
 local Voice = require(Client:WaitForChild("Voice"))
 local Meeting = require(Client:WaitForChild("Meeting"))
 local City = require(Client:WaitForChild("City"))
+local Decor = require(Client:WaitForChild("Decor"))
+local Menu = require(Client:WaitForChild("Menu"))
 local Apps = Client:WaitForChild("apps")
 local PhoneApp = require(Apps:WaitForChild("PhoneApp"))
 local DealApp = require(Apps:WaitForChild("DealApp"))
@@ -21,6 +23,13 @@ Desktop.init()
 Voice.init()
 Meeting.init()
 City.init()
+Decor.init()
+
+-- main menu first; the HUD appears once you spawn onto floor 100
+Menu.onSpawn = function()
+	Hud.setVisible(true)
+end
+Menu.show()
 
 Desktop.registerApp({ id = "phone", name = "Phone", color = Color3.fromRGB(40, 170, 80), open = function()
 	if PhoneApp.call then
@@ -52,7 +61,7 @@ end)
 Net.Toast.OnClientEvent:Connect(Hud.toast)
 
 Net.CallOpen.OnClientEvent:Connect(function(call)
-	Desktop.open()
+	Desktop.open(call.desk)
 	DealApp.resetAll()
 	PhoneApp.open(call)
 	DealApp.open("account")
