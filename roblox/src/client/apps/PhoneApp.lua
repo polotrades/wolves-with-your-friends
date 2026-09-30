@@ -61,8 +61,8 @@ local function send(text: string)
 end
 
 local function build(call)
-	win = Window.new(Desktop.host(), "Phone", Color3.fromRGB(40, 170, 80), UDim2.fromOffset(430, 640),
-		UDim2.new(1, -450, 0, 12))
+	win = Window.new(Desktop.host(), "Phone", Color3.fromRGB(40, 170, 80), UDim2.fromOffset(400, 600),
+		UDim2.new(1, -412, 0, 8))
 	Desktop.trackWindow(win, "Phone", Color3.fromRGB(40, 170, 80))
 	local c = win.content
 	UI.pad(c, 10)
@@ -78,13 +78,13 @@ local function build(call)
 	refs.bar = UI.new("Frame", { Size = UDim2.fromScale(0.25, 1), BorderSizePixel = 0, Parent = barBack })
 	refs.pct = UI.text(top, "", { Size = UDim2.new(0.16, 0, 0.36, 0), Position = UDim2.new(0.83, 0, 0.55, 0) })
 
-	local card = UI.new("Frame", { Size = UDim2.new(1, 0, 0, 170), Position = UDim2.fromOffset(0, 78),
+	local card = UI.new("Frame", { Size = UDim2.new(1, 0, 0, 160), Position = UDim2.fromOffset(0, 76),
 		BackgroundColor3 = Color3.fromRGB(70, 120, 125), Parent = c })
 	UI.corner(card)
 	UI.text(card, call.name:upper(), { Size = UDim2.new(1, -16, 0, 26), Position = UDim2.fromOffset(8, 6) })
-	local face = UI.new("Frame", { Size = UDim2.fromOffset(92, 92), Position = UDim2.new(0.5, -46, 0, 36),
+	local face = UI.new("Frame", { Size = UDim2.fromOffset(84, 84), Position = UDim2.new(0.5, -42, 0, 34),
 		BackgroundColor3 = call.color, Parent = card })
-	UI.corner(face, 46)
+	UI.corner(face, 42)
 	UI.new("UIStroke", { Thickness = 3, Color = Color3.fromRGB(20, 20, 20), Parent = face })
 	for _, x in { 0.3, 0.7 } do -- doodle face
 		local eye = UI.new("Frame", { Size = UDim2.fromOffset(22, 22), Position = UDim2.new(x, -11, 0.3, 0),
@@ -97,7 +97,7 @@ local function build(call)
 	local mouth = UI.new("Frame", { Size = UDim2.fromOffset(34, 12), Position = UDim2.new(0.5, -17, 0.68, 0),
 		BackgroundColor3 = Color3.fromRGB(60, 10, 10), Parent = face })
 	UI.corner(mouth, 6)
-	UI.text(card, call.kind, { Size = UDim2.new(1, 0, 0, 16), Position = UDim2.new(0, 0, 0, 130), Font = UI.bold,
+	UI.text(card, call.kind, { Size = UDim2.new(1, 0, 0, 16), Position = UDim2.new(0, 0, 0, 122), Font = UI.bold,
 		TextColor3 = Color3.fromRGB(220, 240, 240) })
 	local wave = UI.new("Frame", { Size = UDim2.new(1, -20, 0, 18), Position = UDim2.new(0, 10, 1, -22),
 		BackgroundTransparency = 1, Parent = card })
@@ -111,15 +111,15 @@ local function build(call)
 	refs.waiting = UI.text(card, "MESSAGE SENT - WAITING", { Size = UDim2.new(1, 0, 0, 20), Position = UDim2.new(0, 0, 1, -44),
 		TextColor3 = UI.colors.yellow, Visible = false })
 
-	refs.list = UI.new("ScrollingFrame", { Size = UDim2.new(1, 0, 1, -400), Position = UDim2.fromOffset(0, 256),
+	refs.list = UI.new("ScrollingFrame", { Size = UDim2.new(1, 0, 1, -384), Position = UDim2.fromOffset(0, 242),
 		BackgroundColor3 = UI.colors.bg, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		ScrollBarThickness = 6, BorderSizePixel = 0, Parent = c })
 	UI.pad(refs.list, 6)
 	UI.new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = refs.list })
 
-	refs.micStatus = UI.text(c, "", { Size = UDim2.new(1, 0, 0, 18), Position = UDim2.new(0, 0, 1, -140),
+	refs.micStatus = UI.text(c, "", { Size = UDim2.new(1, 0, 0, 18), Position = UDim2.new(0, 0, 1, -126),
 		TextColor3 = UI.colors.yellow, Font = UI.bold })
-	refs.input = UI.new("TextBox", { Size = UDim2.new(1, 0, 0, 40), Position = UDim2.new(0, 0, 1, -116),
+	refs.input = UI.new("TextBox", { Size = UDim2.new(1, 0, 0, 40), Position = UDim2.new(0, 0, 1, -102),
 		BackgroundColor3 = UI.colors.bg, TextColor3 = UI.colors.text, PlaceholderText = "Talk (mic) or type here, Enter to send",
 		Font = UI.body, TextSize = 18, ClearTextOnFocus = false, Text = "", Parent = c })
 	UI.corner(refs.input)
@@ -129,11 +129,11 @@ local function build(call)
 			refs.input.Text = ""
 		end
 	end)
-	UI.button(c, "Hang Up", UI.colors.red, { Size = UDim2.new(0.56, 0, 0, 60), Position = UDim2.new(0, 0, 1, -64) }, function()
+	UI.button(c, "Hang Up", UI.colors.red, { Size = UDim2.new(0.56, 0, 0, 52), Position = UDim2.new(0, 0, 1, -56) }, function()
 		Net.HangUp:FireServer()
 	end)
 	refs.speaker = UI.button(c, "SPK ON", Color3.fromRGB(40, 150, 70),
-		{ Size = UDim2.new(0.2, -4, 0, 60), Position = UDim2.new(0.58, 0, 1, -64) }, function()
+		{ Size = UDim2.new(0.2, -4, 0, 52), Position = UDim2.new(0.58, 0, 1, -56) }, function()
 			Voice.speakerOn = not Voice.speakerOn
 			if not Voice.speakerOn then
 				Voice.stop()
@@ -141,7 +141,7 @@ local function build(call)
 			refs.speaker.Text = Voice.speakerOn and "SPK ON" or "SPK OFF"
 		end)
 	refs.mic = UI.button(c, Voice.micAvailable and "MIC OFF" or "NO MIC", Color3.fromRGB(40, 150, 70),
-		{ Size = UDim2.new(0.2, -4, 0, 60), Position = UDim2.new(0.8, 4, 1, -64) }, function()
+		{ Size = UDim2.new(0.2, -4, 0, 52), Position = UDim2.new(0.8, 4, 1, -56) }, function()
 			local on = Voice.setMic(not Voice.micOn)
 			refs.mic.Text = on and "MIC ON" or (Voice.micAvailable and "MIC OFF" or "NO MIC")
 			refs.mic.BackgroundColor3 = on and UI.colors.red or Color3.fromRGB(40, 150, 70)

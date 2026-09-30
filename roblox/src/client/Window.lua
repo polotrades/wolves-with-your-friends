@@ -6,6 +6,16 @@ local Window = {}
 Window.__index = Window
 
 local topZ = 10
+local scale = 1
+local live = {} -- open windows, so a screen-size change can rescale them all
+
+-- Shrink every window on small screens so nothing gets cut off at the bottom.
+function Window.setScale(s: number)
+	scale = s
+	for w in live do
+		w.uiScale.Scale = s
+	end
+end
 
 function Window.new(host: GuiObject, title: string, iconColor: Color3, size: UDim2, pos: UDim2)
 	local self = setmetatable({}, Window)
@@ -20,6 +30,8 @@ function Window.new(host: GuiObject, title: string, iconColor: Color3, size: UDi
 		Parent = host,
 	})
 	UI.new("UIStroke", { Color = Color3.fromRGB(10, 10, 16), Thickness = 2, Parent = frame })
+	self.uiScale = UI.new("UIScale", { Scale = scale, Parent = frame })
+	live[self] = true
 	local bar = UI.new("Frame", {
 		Name = "TitleBar",
 		Size = UDim2.new(1, 0, 0, 34),
@@ -114,6 +126,7 @@ function Window:close()
 	if self.onClose then
 		self.onClose()
 	end
+	live[self] = nil
 	for _, conn in self.conns do
 		conn:Disconnect()
 	end

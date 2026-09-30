@@ -1,7 +1,9 @@
 -- Shark OS: the full-screen desk computer. Boot screen, wallpaper, app icons, taskbar and status bar.
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
 local UI = require(script.Parent:WaitForChild("UI"))
+local Window = require(script.Parent:WaitForChild("Window"))
 
 local Desktop = {
 	onLeave = nil :: (() -> ())?,
@@ -66,6 +68,19 @@ function Desktop.init()
 	statusLabels.timer = UI.text(status, "", { Size = UDim2.new(0.62, 0, 0.3, 0), Position = UDim2.fromScale(0, 0.66),
 		TextColor3 = UI.colors.red, TextXAlignment = Enum.TextXAlignment.Right })
 	statusLabels.clock = UI.text(status, "", { Size = UDim2.new(0.34, 0, 0.8, 0), Position = UDim2.fromScale(0.65, 0.1) })
+
+	-- fit the tallest window (Phone, 600px) above the taskbar on any screen size
+	local function fit()
+		local cam = Workspace.CurrentCamera
+		if cam then
+			Window.setScale(math.clamp((cam.ViewportSize.Y - 56 - 20) / 600, 0.45, 1))
+		end
+	end
+	fit()
+	Workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(fit)
+	if Workspace.CurrentCamera then
+		Workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit)
+	end
 end
 
 function Desktop.registerApp(def)
