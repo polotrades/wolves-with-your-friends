@@ -119,22 +119,45 @@ local function publicCall(call)
 		speed = p.speed,
 		trust = call.trust,
 		mood = mood(call.trust),
+		suspicion = call.suspicion or 0,
+		notes = call.notes or {},
+		ctype = p.type or "normal",
 		transcript = call.transcript,
 		claimed = call.claimed,
 	}
 end
 
 local function sendUpdate(call, extra)
-	local payload = { trust = call.trust, mood = mood(call.trust), waiting = call.busy }
+	local payload = { trust = call.trust, mood = mood(call.trust), waiting = call.busy,
+		suspicion = call.suspicion or 0, notes = call.notes }
 	for k, v in extra or {} do
 		payload[k] = v
 	end
 	Net.CallUpdate:FireClient(call.operator, payload)
 end
 
+-- auto-notes: if a client line reads out one of their secrets, jot it down for the operator
+local function noteSecrets(call, text: string)
+	call.notes = call.notes or {}
+	local norm = Deals.normalize(text)
+	for _, d in Deals.list do
+		local secret = call.secrets[d.id]
+		if secret and norm:find(Deals.normalize(secret), 1, true) and not call.noted[d.id] then
+			call.noted[d.id] = true
+			table.insert(call.notes, string.format("%s: %s", d.secretLabel, secret))
+		end
+	end
+end
+
 local function addLine(call, who: string, name: string, text: string)
 	local line = { who = who, name = name, text = text }
 	table.insert(call.transcript, line)
+	if who == "client" then
+		noteSecrets(call, text)
+		-- bystanders standing near the desk hear the caller too
+		Net.CallSpeak:FireAllClients(call.desk.id, call.desk.monitor.Position, text, call.profile.voice,
+			call.profile.pitch, call.profile.speed, call.operator)
+	end
 	sendUpdate(call, { line = line })
 	updateMirror(call.desk)
 end
@@ -278,6 +301,9 @@ function CallService.answer(player: Player, desk)
 		closed = false,
 		warnedOffline = false,
 		usedLines = {},
+		suspicion = 0,
+		notes = {},
+		noted = {},
 	}
 	desk.state = "active"
 	desk.call = call
@@ -350,6 +376,27 @@ local function onSay(player: Player, text: any)
 	end
 	addLine(call, "player", player.DisplayName, clean)
 	table.insert(quotes, { name = player.DisplayName, text = clean, client = call.profile.name })
+	-- suspicion: rude or repetitive lines raise it; paranoid callers twice as fast; a smooth talker calms it
+	local lower = clean:lower()
+	local rude = lower:find("stupid") or lower:find("shut up") or lower:find("idiot") or lower:find("dumb")
+	local repeated = call.lastPlayerLine == lower
+	call.lastPlayerLine = lower
+	local susp = 0
+	if rude then
+		susp += 22
+	end
+	if repeated then
+		susp += 12
+	end
+	if call.profile.type == "paranoid" then
+		susp = susp * 2 + 4
+	elseif call.profile.type == "trusting" then
+		susp = susp * 0.5
+	end
+	if Shop.has(player, "smooth") then
+		susp -= 3
+	end
+	call.suspicion = math.clamp((call.suspicion or 0) + susp - 2, 0, 100)
 	local res = ClientAI.respond(call, player.DisplayName, clean)
 	if call.closed then
 		return
@@ -364,6 +411,13 @@ local function onSay(player: Player, text: any)
 	end
 	call.trust = math.clamp(call.trust + change, 0, 100)
 	call.busy = false
+	if call.suspicion >= 100 and not (Shop.has(player, "stall") and not call.stalled) then
+		addLine(call, "client", call.profile.name, "You know what? This feels like a SCAM. I'm hanging up!")
+		task.delay(2, function()
+			CallService.endCall(call, "caller got suspicious")
+		end)
+		return
+	end
 	addLine(call, "client", call.profile.name, res.reply)
 	if res.hang_up and Shop.has(player, "stall") and not call.stalled then
 		-- Stall Script: one more chance per call

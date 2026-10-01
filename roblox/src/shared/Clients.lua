@@ -170,6 +170,104 @@ Clients.list = {
 		quirk = "Is this line secure? Say the password. There is no password. Good." },
 }
 
+Clients.SKINS = {
+	Color3.fromRGB(255, 219, 185),
+	Color3.fromRGB(240, 195, 160),
+	Color3.fromRGB(215, 160, 115),
+	Color3.fromRGB(170, 115, 75),
+	Color3.fromRGB(110, 70, 45),
+}
+
+-- Behavior type for every caller:
+--   trusting  - warms up fast, shares details early (grandma/grandpa types)
+--   paranoid  - suspicious, hangs up easily, slow to trust
+--   bait      - secretly trying to scam YOU; asks for YOUR details, pretends to be the bank
+--   normal    - the default
+Clients.TYPES = { "normal", "trusting", "paranoid", "bait" }
+
+-- tag the featured callers with a type
+local FEATURED_TYPE = {
+	grandpa = "trusting", aussiegran = "trusting", catlady = "trusting", farmer = "trusting",
+	conspiracy = "paranoid", spy = "paranoid", billionaire = "paranoid", lord = "paranoid",
+	ghosthunter = "bait", magician = "bait",
+}
+for _, c in Clients.list do
+	c.type = c.type or FEATURED_TYPE[c.id] or "normal"
+	c.featured = true
+end
+
+-- ------------------------------------------------------------------ 100+ callers
+-- A generator so there are always plenty of fresh voices. Each caller gets a distinct voice from the 11 Roblox TTS
+-- voices combined with pitch and speed, a kind, a type, a quirk and a cartoon look.
+local FIRST = { "Walter", "Mabel", "Gus", "Edith", "Dale", "Pearl", "Chuck", "Nadia", "Omar", "Rosa", "Hank", "Ingrid",
+	"Dmitri", "Sunny", "Boris", "Opal", "Reggie", "Fern", "Cliff", "Greta", "Marv", "Lupe", "Sven", "Dot", "Clyde",
+	"Winnie", "Rex", "Cleo", "Angus", "Vera", "Pablo", "Myrna", "Tito", "Esme", "Hugo", "Thelma", "Benny", "Lydia",
+	"Otis", "Fatima", "Ned", "Gail", "Ravi", "June", "Stan", "Cora", "Yuki", "Lars", "Marge", "Pete" }
+local SUR = { "Nibblet", "Fox", "Crumb", "Strudel", "Boggs", "Peppercorn", "Vance", "Quill", "Marlow", "Tubbs", "Hollow",
+	"Pennywhistle", "Grimble", "Sprout", "Dunk", "Ashby", "Figg", "Marrow", "Wren", "Puddle", "Thistle", "Ocho", "Krill",
+	"Bramble", "Nutt", "Dovecote", "Sizzle", "Pyle", "Crane", "Wick" }
+local NICK = { "Lucky", "Big Deal", "Two-Phones", "Mittens", "The Wall", "Doc", "Sparkles", "Nibbles", "Cash", "Tiny",
+	"Sunshine", "Grumbles", "Boomer", "Pickles", "Diamond", "Noodles", "Ace", "Bubbles", "Chief", "Snaps" }
+local KINDS = {
+	{ "Retiree", "a cheerful retiree who just wants someone to talk to", "trusting" },
+	{ "Taxi Driver", "a chatty taxi driver who has an opinion about every street and every stock", "normal" },
+	{ "Food Critic", "a snobby food critic who rates the deal like a restaurant", "normal" },
+	{ "Weatherman", "a dramatic weatherman who forecasts the market like a storm", "normal" },
+	{ "Toddler's Parent", "a frazzled parent being interrupted by a toddler every sentence", "normal" },
+	{ "Pirate Fan", "someone obsessed with pirates who wants treasure, not stocks", "normal" },
+	{ "Librarian", "a soft-spoken librarian who keeps shushing the broker", "paranoid" },
+	{ "Trucker", "a long-haul trucker who talks in CB radio lingo", "normal" },
+	{ "Clown", "a working clown who honks a horn when excited", "trusting" },
+	{ "Scientist", "a mad scientist who wants to invest in questionable experiments", "normal" },
+	{ "Fortune Teller", "a fortune teller who already 'saw' this call coming", "bait" },
+	{ "Beekeeper", "a calm beekeeper who relates everything to bees", "normal" },
+	{ "Game Streamer", "a hyper game streamer who thinks this is a sponsorship", "trusting" },
+	{ "Grumpy Neighbor", "a grumpy neighbor who complains the whole call", "paranoid" },
+	{ "Lottery Winner", "a brand-new lottery winner with more money than sense", "trusting" },
+	{ "Retired Wrestler", "a loud retired wrestler who challenges the deal to a match", "normal" },
+	{ "Mall Santa", "an off-season mall Santa who ho-ho-hos a lot", "trusting" },
+	{ "Suspicious Uncle", "a suspicious uncle who thinks every call is a scam", "paranoid" },
+	{ "Influencer Mom", "a mom-influencer filming the whole call for content", "trusting" },
+	{ "Robot Voice", "someone who insists they are definitely a human and not a robot", "bait" },
+}
+
+local function make(i: number)
+	local first = FIRST[(i % #FIRST) + 1]
+	local sur = SUR[(i * 3 % #SUR) + 1]
+	local kind = KINDS[(i % #KINDS) + 1]
+	local voice = tostring((i % 11) + 1)
+	local pitch = 0.75 + (i % 5) * 0.12
+	local speed = 0.8 + ((i // 5) % 4) * 0.12
+	local hairStyles = { "short", "long", "bun", "cap", "hat", "spiky", "curly", "bald" }
+	local col = Color3.fromHSV((i * 0.11) % 1, 0.5, 0.8)
+	local c = {
+		id = "gen" .. i,
+		name = first,
+		nickname = NICK[(i % #NICK) + 1],
+		surname = sur,
+		kind = kind[1],
+		voice = voice,
+		pitch = pitch,
+		speed = speed,
+		color = col,
+		persona = kind[2],
+		quirk = nil,
+		type = kind[3],
+		look = {
+			trait = ({ trusting = "sounds like they believe anything", paranoid = "sounds suspicious of everything",
+				bait = "sounds a little too interested in YOU", normal = "sounds like an ordinary person" })[kind[3]],
+			skin = Clients.SKINS[(i % 5) + 1],
+			hair = Color3.fromHSV((i * 0.17) % 1, 0.4, 0.5),
+			style = hairStyles[(i % #hairStyles) + 1],
+		},
+	}
+	return c
+end
+
+for i = 1, 90 do
+	table.insert(Clients.list, make(i))
+end
+
 -- One-line read on each caller for the Phone app ("sounds like they believe anything") and their cartoon look:
 -- skin tone, hair color and hair style (bald | short | long | bun | cap | hat | spiky | curly).
 Clients.looks = {
@@ -196,15 +294,10 @@ Clients.looks = {
 	spy = { trait = "sounds paranoid, trusts no one", skin = 1, hair = Color3.fromRGB(70, 70, 75), style = "short" },
 }
 
-Clients.SKINS = {
-	Color3.fromRGB(255, 219, 185),
-	Color3.fromRGB(240, 195, 160),
-	Color3.fromRGB(215, 160, 115),
-	Color3.fromRGB(170, 115, 75),
-	Color3.fromRGB(110, 70, 45),
-}
-
 function Clients.look(c)
+	if c.look then
+		return c.look
+	end
 	local l = Clients.looks[c.id] or { trait = "sounds like an ordinary person", skin = 2, hair = Color3.fromRGB(80, 60, 40),
 		style = "short" }
 	return { trait = l.trait, skin = Clients.SKINS[l.skin] or Clients.SKINS[2], hair = l.hair, style = l.style }

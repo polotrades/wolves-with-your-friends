@@ -74,10 +74,15 @@ local function setTrust(trust: number, mood: string)
 	refs.bar.Size = UDim2.fromScale(math.clamp(trust / 100, 0.01, 1), 1)
 	refs.bar.BackgroundColor3 = color
 	refs.access.BackgroundColor3 = State.access and Color3.fromRGB(90, 90, 100) or Color3.fromRGB(0, 110, 210)
+	if refs.suspBar then
+		local call = PhoneApp.call
+		refs.suspBar.Size = UDim2.fromScale(math.clamp((call and call.suspicion or 0) / 100, 0, 1), 1)
+	end
 end
 
 local function send(text: string)
 	if PhoneApp.call and refs and text:gsub("%s", "") ~= "" and not refs.waiting.Visible then
+		Voice.stop() -- interrupt the caller if they're still talking
 		Net.Say:FireServer(text)
 	end
 end
@@ -148,6 +153,15 @@ local function buildCard(call)
 	local tick = UI.new("Frame", { Size = UDim2.new(0, 2, 1, 6), Position = UDim2.new(Config.REVEAL_TRUST / 100, -1, 0, -3),
 		BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, Parent = back })
 	tick.ZIndex = 3
+	-- suspicion meter (fills red; a full bar means they hang up)
+	UI.label(card, "SUSPICION", 10, { Size = UDim2.fromOffset(70, 12), Position = UDim2.fromOffset(12, 148), Font = UI.bold,
+		TextColor3 = UI.os.dim })
+	local sback = UI.new("Frame", { Size = UDim2.new(1, -24, 0, 6), Position = UDim2.fromOffset(12, 160),
+		BackgroundColor3 = Color3.fromRGB(25, 25, 30), BorderSizePixel = 0, Parent = card })
+	UI.corner(sback, 3)
+	refs.suspBar = UI.new("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = UI.colors.red, BorderSizePixel = 0,
+		Parent = sback })
+	UI.corner(refs.suspBar, 3)
 	refs.waiting = UI.label(card, "● ● ●  thinking", 12, { Size = UDim2.fromOffset(120, 16), Position = UDim2.new(1, -132, 0, 12),
 		TextColor3 = UI.colors.yellow, TextXAlignment = Enum.TextXAlignment.Right, Visible = false, Font = UI.bold })
 end
@@ -158,7 +172,7 @@ local function build()
 	UI.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = UI.os.surface, BorderSizePixel = 0, Parent = c })
 	UI.pad(c, 10)
 	refs = {}
-	refs.card = UI.new("Frame", { Size = UDim2.new(1, 0, 0, 156), BackgroundColor3 = Color3.fromRGB(30, 34, 48), Parent = c })
+	refs.card = UI.new("Frame", { Size = UDim2.new(1, 0, 0, 174), BackgroundColor3 = Color3.fromRGB(30, 34, 48), Parent = c })
 	UI.corner(refs.card, 10)
 	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(46, 60, 96), Color3.fromRGB(26, 28, 40)),
 		Parent = refs.card })
@@ -167,14 +181,14 @@ local function build()
 	refs.trustNum, refs.mood = UI.label(refs.card, "", 12), UI.label(refs.card, "", 12)
 	refs.bar = UI.new("Frame", { Parent = refs.card, Visible = false })
 
-	refs.list = UI.new("ScrollingFrame", { Size = UDim2.new(1, 0, 1, -380), Position = UDim2.fromOffset(0, 164),
+	refs.list = UI.new("ScrollingFrame", { Size = UDim2.new(1, 0, 1, -398), Position = UDim2.fromOffset(0, 182),
 		BackgroundColor3 = UI.os.title, CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		ScrollBarThickness = 5, BorderSizePixel = 0, Parent = c })
 	UI.corner(refs.list, 8)
 	UI.pad(refs.list, 8)
 	UI.new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = refs.list })
 
-	refs.empty = UI.new("Frame", { Size = UDim2.new(1, 0, 1, -380), Position = UDim2.fromOffset(0, 164), BackgroundTransparency = 1,
+	refs.empty = UI.new("Frame", { Size = UDim2.new(1, 0, 1, -398), Position = UDim2.fromOffset(0, 182), BackgroundTransparency = 1,
 		ZIndex = 5, Parent = c })
 	UI.text(refs.empty, "📵", { Size = UDim2.fromOffset(64, 64), Position = UDim2.new(0.5, -32, 0.18, 0), ZIndex = 5 })
 	UI.label(refs.empty, "No call at this desk.", 18, { Position = UDim2.new(0, 0, 0.18, 74), Font = UI.bold,
@@ -295,6 +309,14 @@ function PhoneApp.update(u)
 		return
 	end
 	call.trust, call.mood, call.waiting = u.trust, u.mood, u.waiting
+	call.suspicion = u.suspicion or call.suspicion
+	if u.notes then
+		call.notes = u.notes
+	end
+	if u.waiting and not call.wasWaiting then
+		Voice.filler(call.voice, call.pitch, call.speed)
+	end
+	call.wasWaiting = u.waiting
 	if u.line then
 		table.insert(call.transcript, u.line)
 		if u.line.who == "player" then
@@ -303,6 +325,8 @@ function PhoneApp.update(u)
 			Voice.speak(u.line.text, call.voice, call.pitch, call.speed)
 		end
 	end
+	local notes = call.notes or {}
+	call.notedShown = call.notedShown or 0
 	if refs then
 		setTrust(u.trust, u.mood)
 		refs.waiting.Visible = u.waiting == true
@@ -312,7 +336,11 @@ function PhoneApp.update(u)
 				refreshSuggestions()
 			end
 		end
+		for i = call.notedShown + 1, #notes do
+			addBubble({ who = "client", name = "SYSTEM", text = "📝 Noted - " .. notes[i] })
+		end
 	end
+	call.notedShown = #notes
 	State.emit()
 end
 

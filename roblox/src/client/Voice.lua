@@ -133,6 +133,15 @@ function Voice.speak(text: string, voiceId: string, pitch: number?, speed: numbe
 	end)
 end
 
+local FILLERS = { "Hmm...", "Well...", "Let me think...", "Uhh...", "Ohh...", "Give me a sec..." }
+-- a short spoken filler while the caller is composing a reply
+function Voice.filler(voiceId: string, pitch: number?, speed: number?)
+	if not (tts and Voice.speakerOn) then
+		return
+	end
+	Voice.speak(FILLERS[math.random(1, #FILLERS)], voiceId, pitch, speed)
+end
+
 function Voice.stop()
 	speakToken += 1
 	if tts then

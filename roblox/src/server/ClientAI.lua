@@ -28,8 +28,15 @@ local function systemPrompt(profile, secrets): string
 	for _, d in Deals.list do
 		table.insert(details, string.format("your %s is %s", d.secretLabel, secrets[d.id]))
 	end
+	local behavior = ({
+		trusting = "You trust people easily and warm up fast. Share details sooner than most.",
+		paranoid = "You are suspicious and easily spooked. If the broker is pushy or weird, get nervous and threaten to hang up.",
+		bait = "Twist: you are secretly trying to scam the BROKER. Playfully turn questions around and ask for THEIR details, but keep it silly and obvious, never real-world phishing.",
+		normal = "",
+	})[profile.type or "normal"] or ""
 	return table.concat({
 		string.format("You are %s, %s.", Clients.displayName(profile), profile.persona),
+		behavior,
 		"You are a fictional character in a silly cartoon comedy game. A broker from Wolf & Co. is calling you",
 		"to sell you ridiculous, obviously fake investments (like banana farms on the moon).",
 		"Stay in character and be funny. Every reply is at most 2 short sentences and under 200 characters.",

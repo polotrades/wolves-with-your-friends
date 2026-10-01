@@ -146,13 +146,18 @@ The owner prefers **quality over speed** and wants **models built in Blender fir
    - `server/CharacterService.lua`: applies the look and the animation pack on spawn (the look rides in on Spawn).
    - Note: body-type scaling shows on the spawned character; the preview may not rescale (ViewportFrame Humanoids
      don't drive scale). Animation-pack asset ids are best-effort and fall back silently.
-6. **Call upgrades and 100+ callers.**
-   - Callers get distinct voices (11 TTS voices × pitch/speed).
-   - Parody celebrities and a "president" type are fine, but **never real people**.
-   - Filler sounds while the caller thinks, and interruptions.
-   - Memory and contradictions, a suspicion meter with hang-ups, and auto-notes of revealed info.
-   - Caller types: bait, grandma, paranoid.
-   - Others hear the call spatially at the desk.
+6. ~~**Call upgrades and 100+ callers.**~~ Done (not yet tested).
+   - `shared/Clients.lua`: 25 featured callers plus a generator for 90 more (115 total), each with a distinct voice
+     (11 TTS voices x pitch x speed), a kind, a behavior `type` and a cartoon look.
+   - Caller types drive behavior (`ClientAI` prompt + canned + suspicion): trusting (warms fast), paranoid (spooks
+     easily), bait (silly reverse-scam that never does real phishing), normal.
+   - Per-call suspicion meter (`CallService`): rises on rude/repeated lines, faster for paranoid callers, calmed by
+     Smooth Talker; at 100 the caller hancs up. Shown as a red bar in the Phone.
+   - Auto-notes: when a caller reads out a secret, it's jotted in the Phone as a 📝 note (and sent in CallUpdate).
+   - Memory/contradictions ride on the AI ContextToken (already there).
+   - Filler speech while the caller thinks + interruption (talking cuts the caller off): `Voice.filler` / `Voice.stop`.
+   - Bystanders hear calls at the desk: `CallSpeak` broadcast + `client/SpatialVoice.lua` (AudioEmitter per desk).
+   - No real people: all callers are fictional (kept the existing rule).
 7. **Office suspicion and raid.** It rises from suspicious calls and chaos. At 100% a cutscene plays:
    helicopters with officers rappelling, and cartoony cops in Roblox-avatar style with cartoon guns coming out of
    the elevators.

@@ -37,6 +37,7 @@ local NAMES = {
 	"Fx", -- server -> all: (kind, cframe) spawn a shared effect (puddle, splash, print)
 	"Floor", -- player -> server: travel between "office" and "roof"
 	"Music", -- server -> all: (on, assetId) DJ music toggle for client ambience
+	"CallSpeak", -- server -> all: (deskId, position, text, voice, pitch, speed) bystanders hear the call at the desk
 }
 
 local Net = {}
