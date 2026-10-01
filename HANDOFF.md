@@ -93,7 +93,19 @@ The owner prefers **quality over speed** and wants **models built in Blender fir
       - upgrade effects: Lucky Tie, Smooth Talker, Stall Script, Advanced Extractor, and the VPN's no trust loss
         on a refused request
 
-## Still to do (in this order)
+## All 10 build steps are implemented (type-checked, .rbxl rebuilt). None have been tested in Studio yet.
+Owner to-do before/while testing:
+- Re-run the Blender prop build so the rooftop props (BUILDERS_7) stop showing grey boxes:
+  `python3 props.py --part i 4` (i=0..3) → `python3 merge_props.py` → `python3 export_props.py`, then re-import the
+  4 packs into `ServerStorage/PropModels` (steps in `roblox/README.md`).
+- Fill in sound asset ids in `Config.SOUNDS`, `Config.PIANO_NOTES`, `DJ_MUSIC_ID`, `ELEVATOR_DING_ID`,
+  `RING_SOUND_ID` to hear ring / impacts / breaking / elevator / DJ / piano.
+- Answer the "gambling" questions in the experience maturity questionnaire before publishing (Wolf Casino uses
+  in-game money only, never Robux, and winnings don't count toward the firm quota).
+- Enable Microphone in Game Settings > Communication and keep `VoiceChatService.UseAudioApi = Enabled` (already set)
+  for voice calls, bystander call audio and talking mouths.
+
+## Build steps (all done)
 1. ~~**Windows-style computer (big).**~~ Done (see above); the list below is kept for reference. Shark OS should look like a real Windows-like desktop with no Microsoft
    branding:
    - Desktop: start menu, taskbar with pinned apps and a tray clock, windows with min/max/close, drag and snap,
