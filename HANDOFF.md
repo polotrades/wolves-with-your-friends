@@ -158,9 +158,14 @@ The owner prefers **quality over speed** and wants **models built in Blender fir
    - Filler speech while the caller thinks + interruption (talking cuts the caller off): `Voice.filler` / `Voice.stop`.
    - Bystanders hear calls at the desk: `CallSpeak` broadcast + `client/SpatialVoice.lua` (AudioEmitter per desk).
    - No real people: all callers are fictional (kept the existing rule).
-7. **Office suspicion and raid.** It rises from suspicious calls and chaos. At 100% a cutscene plays:
-   helicopters with officers rappelling, and cartoony cops in Roblox-avatar style with cartoon guns coming out of
-   the elevators.
+7. ~~**Office suspicion and raid.**~~ Done (not yet tested).
+   - `server/Suspicion.lua`: a floor-wide 0-100 meter. Rises when a caller gets spooked and hangs up (+14) and from
+     chaos (thrown items), decays when calm, and a clean deal shaves a little off. Broadcast in Status, so the
+     existing OFFICE SUSPICION wall board now actually moves.
+   - At 100 `GameLoop` ends the day early and runs the raid, then the fired screen.
+   - `server/RaidService.lua`: helicopters circle outside with officers rappelling on ropes, and cartoon officers
+     (navy, caps, water-blaster "guns") march out of the elevators. `client/Raid.lua` plays the siren flash, the
+     "FLOOR 100 RAIDED" banner and a pulled-back shaking camera.
 8. **Hands.** First-person hands you can move independently, point, gesture, and a grab pose. The hand models are
    in props (HandOpen/Point/ThumbsUp/Fist/Peace/CallMe/Grab).
 9. **Spatial sound effects.** Phone ring, prop impacts, breaking, elevator ding and doors, DJ music, and a

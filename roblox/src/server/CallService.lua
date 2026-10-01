@@ -14,6 +14,7 @@ local ClientAI = require(script.Parent:WaitForChild("ClientAI"))
 local Economy = require(script.Parent:WaitForChild("Economy"))
 local NPCGuide = require(script.Parent:WaitForChild("NPCGuide"))
 local Shop = require(script.Parent:WaitForChild("Shop"))
+local Suspicion = require(script.Parent:WaitForChild("Suspicion"))
 
 local CallService = {}
 
@@ -413,6 +414,7 @@ local function onSay(player: Player, text: any)
 	call.busy = false
 	if call.suspicion >= 100 and not (Shop.has(player, "stall") and not call.stalled) then
 		addLine(call, "client", call.profile.name, "You know what? This feels like a SCAM. I'm hanging up!")
+		Suspicion.add(14) -- a spooked caller raises the heat on the whole floor
 		task.delay(2, function()
 			CallService.endCall(call, "caller got suspicious")
 		end)
@@ -454,6 +456,7 @@ local function onVerify(player: Player, dealId: any, value: any)
 			payout = math.floor(payout * 1.25) -- Advanced Extractor
 		end
 		Economy.add(player, payout, true, deal.app .. " deal")
+		Suspicion.add(-4) -- a clean close calms the floor a touch
 		Net.VerifyResult:FireClient(player, dealId, true, string.format("Deal closed - $%d earned.", payout), payout)
 	else
 		Net.VerifyResult:FireClient(player, dealId, false, "Verification failed. Wrong code.")

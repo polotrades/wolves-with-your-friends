@@ -10,6 +10,8 @@ local Economy = require(script.Parent:WaitForChild("Economy"))
 local CallService = require(script.Parent:WaitForChild("CallService"))
 local NPCGuide = require(script.Parent:WaitForChild("NPCGuide"))
 local Shop = require(script.Parent:WaitForChild("Shop"))
+local Suspicion = require(script.Parent:WaitForChild("Suspicion"))
+local RaidService = require(script.Parent:WaitForChild("RaidService"))
 local Casino = require(script.Parent:WaitForChild("Casino"))
 
 local GameLoop = {}
@@ -35,15 +37,16 @@ local function broadcast()
 		team = Economy.team,
 		quota = Economy.quota(),
 		haul = Economy.haul,
+		suspicion = Suspicion.get(),
 	})
 end
 
-local function countdown(seconds: number, onTick: ((number) -> ())?)
+local function countdown(seconds: number, onTick: ((number) -> boolean?)?)
 	for t = seconds, 0, -1 do
 		timeLeft = t
 		broadcast()
-		if onTick then
-			onTick(t)
+		if onTick and onTick(t) then
+			return -- a tick asked to stop early (e.g. the raid)
 		end
 		if t > 0 then
 			task.wait(1)
@@ -155,8 +158,9 @@ local function meeting(): boolean
 	return met
 end
 
-local function fired(daysWorked: number)
+local function fired(daysWorked: number, reason: string?)
 	state = "FIRED"
+	local _ = reason
 	local fires = {}
 	for _, pos in office.conference.fireSpots do
 		local p = Instance.new("Part")
@@ -218,18 +222,34 @@ function GameLoop.run(o)
 			countdown(Config.INTERMISSION)
 			while true do
 				Economy.startDay()
+				Suspicion.reset()
 				CallService.startDay()
 				Shop.setWorking(true)
 				state = "DAY"
 				NPCGuide.chairman(HYPE[math.random(#HYPE)], 6)
+				local raided = false
+				Suspicion.onFull(function()
+					if raided then
+						return
+					end
+					raided = true
+				end)
 				countdown(Config.DAY_LENGTH, function(t)
+					Suspicion.decay(1)
+					Suspicion.add(RaidService.chaosHeat()) -- a messy floor slowly raises the heat
 					if t == 60 then
 						Net.Toast:FireAllClients("1 MINUTE until the boss meeting!")
 					end
+					return raided -- stop the day the moment the floor is raided
 				end)
 				CallService.stopAll()
 				Shop.setWorking(false)
 				if #Players:GetPlayers() == 0 then
+					break
+				end
+				if raided then
+					RaidService.run()
+					fired(Economy.day, "RAID")
 					break
 				end
 				if not meeting() then
