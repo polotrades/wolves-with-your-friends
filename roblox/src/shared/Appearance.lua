@@ -556,6 +556,13 @@ function Appearance.apply(char: Model, look)
 		buildHat(folder, b.Head, Appearance.HATS[look.hat])
 		buildGlasses(folder, b.Head, Appearance.GLASSES[look.glasses])
 	end
+	-- everything built so far is head-region: mark it so the owner's own first-person camera can hide it
+	-- (otherwise the opaque head/face parts sit right on top of the camera and black out the view)
+	for _, d in folder:GetChildren() do
+		if d:IsA("BasePart") then
+			d:SetAttribute("HeadPiece", true)
+		end
+	end
 	buildTorso(folder, b, Appearance.TORSOS[look.torso], topC, skin)
 	buildArms(folder, b, Appearance.ARMS[look.arms], topC, skin)
 	buildHands(folder, b, Appearance.HANDS[look.hands], skin)
@@ -591,6 +598,7 @@ function Appearance.addGear(char: Model)
 		p.CanCollide = false
 		p.Massless = true
 		p.CFrame = head.CFrame * offset
+		p:SetAttribute("HeadPiece", true)
 		p.Parent = folder
 		weld(head, p)
 		return p
