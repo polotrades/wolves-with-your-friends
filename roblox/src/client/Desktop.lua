@@ -537,6 +537,7 @@ function Desktop.notify(title: string, body: string, glyph: string?)
 	if not gui then
 		return
 	end
+	UI.sound("notify", 0.4)
 	local card = UI.new("Frame", { Size = UDim2.new(1, 0, 0, 74), BackgroundColor3 = UI.os.title, LayoutOrder = math.floor(os.clock() * 100),
 		Parent = notifyHolder })
 	UI.corner(card, 8)
@@ -617,6 +618,7 @@ function Desktop.open(deskId: number?)
 	if Desktop.onOpen then
 		Desktop.onOpen()
 	end
+	UI.sound("boot", 0.5)
 	bootScreen()
 	Desktop.refreshInfo()
 	mirrorDirty = true
@@ -753,6 +755,7 @@ end
 
 -- big green "+$250" that floats up the screen
 function Desktop.popMoney(amount: number)
+	UI.sound("money", 0.6)
 	local target = gui.Enabled and gui or player.PlayerGui:FindFirstChild("Hud")
 	if not target then
 		return

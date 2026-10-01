@@ -41,28 +41,29 @@ Config.STUDS_PER_METER = 3.0 -- a Roblox character is ~5.3 studs, a person ~1.8 
 Config.PROP_TURN_DEGREES = 0
 
 -- Optional sound asset ids (Creator Store). Leave "" to skip.
-Config.RING_SOUND_ID = ""
-Config.CHEER_SOUND_ID = ""
-Config.DJ_MUSIC_ID = "" -- rooftop DJ loop (Creator Store audio); leave "" for a silent stage
-Config.ELEVATOR_DING_ID = ""
+-- All sounds use Roblox's BUILT-IN library (rbxasset://sounds/...), which ships with every Roblox install - so there
+-- is audio out of the box with nothing to upload and no moderation. To upgrade any one, drop a Creator Store id
+-- ("rbxassetid://...") in its place. If one comes out silent, it's a wrong built-in path - just swap that line.
+Config.RING_SOUND_ID = "rbxasset://sounds/electronicpingshort.wav"
+Config.CHEER_SOUND_ID = "rbxasset://sounds/victory.wav"
+Config.DJ_MUSIC_ID = "" -- a music loop needs a real upload; leave "" for a silent stage (set an rbxassetid to add one)
+Config.ELEVATOR_DING_ID = "rbxasset://sounds/electronicpingshort.wav"
 
--- Spatial sound effects. Fill these with Creator Store audio asset ids ("rbxassetid://...") and they play
--- automatically at the right place; leave "" and that effect is silent. Piano notes are one octave, C..B.
+-- Spatial sound effects played in the world (server/Audio.lua). Built-in by default; swap any for an rbxassetid.
 Config.SOUNDS = {
-	ring = "",
-	impactSoft = "",
-	impactHard = "",
-	glassBreak = "",
-	elevatorDing = "",
-	elevatorDoors = "",
-	splash = "",
-	pour = "",
-	printPage = "",
-	coin = "",
-	gong = "",
+	ring = "rbxasset://sounds/electronicpingshort.wav",
+	impactSoft = "rbxasset://sounds/bass.wav",
+	impactHard = "rbxasset://sounds/collide.wav",
+	glassBreak = "rbxasset://sounds/snap.wav",
+	elevatorDing = "rbxasset://sounds/electronicpingshort.wav",
+	elevatorDoors = "rbxasset://sounds/swoosh.wav",
+	splash = "rbxasset://sounds/impact_water.mp3",
+	pour = "rbxasset://sounds/impact_water.mp3",
+	printPage = "rbxasset://sounds/clickfast.wav",
+	coin = "rbxasset://sounds/snap.wav",
+	gong = "rbxasset://sounds/bass.wav",
 }
-Config.PIANO_NOTES = { -- C, C#, D, D#, E, F, F#, G, G#, A, A#, B
-	"", "", "", "", "", "", "", "", "", "", "", "",
-}
+-- The piano pitches ONE built-in tone across the octave (see PianoService), so it's playable with no upload.
+Config.PIANO_BASE = "rbxasset://sounds/electronicpingshort.wav"
 
 return Config

@@ -55,6 +55,7 @@ function DealApp.result(dealId: string, ok: boolean, message: string, payout: nu
 	if ok then
 		State.claimed[dealId] = true
 		State.emit()
+		UI.sound("success", 0.5)
 	end
 	local w = open[dealId]
 	if w then

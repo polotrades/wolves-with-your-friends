@@ -46,10 +46,11 @@ function PianoService.init()
 		if type(noteIndex) ~= "number" or typeof(position) ~= "Vector3" then
 			return
 		end
-		noteIndex = math.floor(noteIndex)
-		local id = Config.PIANO_NOTES[noteIndex]
-		if id and id ~= "" then
-			Audio.note(id, position, 0.8)
+		noteIndex = math.clamp(math.floor(noteIndex), 1, 12)
+		-- pitch one built-in tone across the octave: A4 (index 10) is the reference
+		if Config.PIANO_BASE ~= "" then
+			local pitch = 2 ^ ((noteIndex - 10) / 12)
+			Audio.at(Config.PIANO_BASE, position, 0.8, pitch)
 		end
 	end)
 end

@@ -36,6 +36,37 @@ UI.font = Enum.Font.FredokaOne
 UI.body = Enum.Font.GothamMedium
 UI.bold = Enum.Font.GothamBold
 
+-- Built-in UI sounds (rbxasset ships with Roblox, so these just work). Cached and played non-positionally.
+local SoundService = game:GetService("SoundService")
+UI.SFX = {
+	click = "rbxasset://sounds/button.wav",
+	open = "rbxasset://sounds/electronicpingshort.wav",
+	close = "rbxasset://sounds/clickfast.wav",
+	notify = "rbxasset://sounds/electronicpingshort.wav",
+	success = "rbxasset://sounds/victory.wav",
+	money = "rbxasset://sounds/snap.wav",
+	error = "rbxasset://sounds/bass.wav",
+	boot = "rbxasset://sounds/electronicpingshort.wav",
+}
+local soundCache: { [string]: Sound } = {}
+function UI.sound(name: string, volume: number?, pitch: number?)
+	local id = UI.SFX[name] or name
+	if type(id) ~= "string" or id == "" then
+		return
+	end
+	local s = soundCache[id]
+	if not s then
+		s = Instance.new("Sound")
+		s.SoundId = id
+		s.Parent = SoundService
+		soundCache[id] = s
+	end
+	s.Volume = volume or 0.5
+	s.PlaybackSpeed = pitch or 1
+	s.TimePosition = 0
+	s:Play()
+end
+
 function UI.new(class: string, props, children)
 	local inst = Instance.new(class)
 	local parent
@@ -134,6 +165,9 @@ function UI.flat(parent: Instance, text: string, color: Color3, props, onClick: 
 		(b :: any)[k] = v
 	end
 	UI.corner(b, 6)
+	b.Activated:Connect(function()
+		UI.sound("click", 0.35)
+	end)
 	if onClick then
 		b.Activated:Connect(onClick)
 	end

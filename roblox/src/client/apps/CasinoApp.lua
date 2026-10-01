@@ -186,8 +186,10 @@ function CasinoApp.result(r)
 		drawCandles(refs.history)
 		if r.win > 0 then
 			message(string.format("%s! You win %s.", r.up and "UP" or "DOWN", UI.money(r.win)), UI.colors.green)
+			UI.sound("success", 0.5)
 		else
 			message(string.format("%s. You lose %s.", r.up and "UP" or "DOWN", UI.money(r.bet)), UI.colors.red)
+			UI.sound("error", 0.4)
 		end
 		setWallet()
 	elseif r.game == "slots" then
@@ -215,8 +217,10 @@ function CasinoApp.result(r)
 			refs.spinning = false
 			if r.win > 0 then
 				message("WIN " .. UI.money(r.win) .. "!", UI.colors.green)
+				UI.sound("success", 0.6)
 			else
 				message("No luck. Lost " .. UI.money(r.bet) .. ".", UI.colors.red)
+				UI.sound("error", 0.4)
 			end
 			setWallet()
 		end)

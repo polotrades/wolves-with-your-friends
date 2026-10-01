@@ -225,6 +225,7 @@ function Window.new(host: GuiObject, opts: Options)
 
 	live[self] = true
 	self:focus()
+	UI.sound("open", 0.3)
 	-- open animation
 	self.uiScale.Scale = scale * 0.92
 	TweenService:Create(self.uiScale, TweenInfo.new(0.12, Enum.EasingStyle.Quad), { Scale = scale }):Play()
@@ -308,6 +309,7 @@ function Window:close()
 		return
 	end
 	self.closed = true
+	UI.sound("close", 0.25)
 	if self.onClose then
 		self.onClose()
 	end

@@ -98,8 +98,11 @@ Owner to-do before/while testing:
 - Re-run the Blender prop build so the rooftop props (BUILDERS_7) stop showing grey boxes:
   `python3 props.py --part i 4` (i=0..3) → `python3 merge_props.py` → `python3 export_props.py`, then re-import the
   4 packs into `ServerStorage/PropModels` (steps in `roblox/README.md`).
-- Fill in sound asset ids in `Config.SOUNDS`, `Config.PIANO_NOTES`, `DJ_MUSIC_ID`, `ELEVATOR_DING_ID`,
-  `RING_SOUND_ID` to hear ring / impacts / breaking / elevator / DJ / piano.
+- Sounds now play out of the box using Roblox's built-in library (rbxasset://sounds/...): UI clicks, window
+  open/close, boot chime, notifications, deal cha-ching, money pop, casino win/lose, phone ring, impacts, breaking,
+  elevator ding/doors, splashes, and a pitch-shifted playable piano. To upgrade any, drop a Creator Store id into
+  `Config.SOUNDS` / `Config.RING_SOUND_ID` / `Config.ELEVATOR_DING_ID` / `UI.SFX`. `DJ_MUSIC_ID` still needs a real
+  upload for rooftop music. If a built-in path is wrong it's just silent - swap that one line.
 - Answer the "gambling" questions in the experience maturity questionnaire before publishing (Wolf Casino uses
   in-game money only, never Robux, and winnings don't count toward the firm quota).
 - Enable Microphone in Game Settings > Communication and keep `VoiceChatService.UseAudioApi = Enabled` (already set)
