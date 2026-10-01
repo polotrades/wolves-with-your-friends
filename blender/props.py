@@ -2117,6 +2117,110 @@ BUILDERS_6 = [trading_rig, gold_wolf, big_letters, server_rack, phone_booth, esp
               bull_bear_bookends, ceiling_light, pendant_lamp, air_hockey, cue_rack, side_table, water_pallet, calculator]
 
 
+# ---------------------------------------------------------------- round 7: luxury rooftop
+TEAK = M("WoodPlanks", "Teak", (0.55, 0.38, 0.2), 0.55)
+POOLTILE = M("Marble", "PoolTile", (0.3, 0.75, 0.9), 0.2)
+POOLWATER = M("Glass", "PoolWater", (0.3, 0.75, 0.95), 0.02)
+CHROME_RT = CHROME
+CANVAS_RED = M("Fabric", "ParasolRed", (0.85, 0.15, 0.15), 0.85)
+CANVAS_CREAM = M("Fabric", "ParasolCream", (0.9, 0.84, 0.68), 0.85)
+NEON_MAGENTA = M("Neon", "Magenta", (1.0, 0.1, 0.7), 0.3, emit=4)
+NEON_CYAN = M("Neon", "RoofCyan", (0.1, 0.9, 1.0), 0.3, emit=4)
+BULB = M("Neon", "Bulb", (1.0, 0.9, 0.6), 0.3, emit=3)
+
+
+def dj_booth(x):
+    p = prop("DJBooth", x)
+    cube("BoothBody", 1, (0, 0, 0.55), (1.8, 0.7, 1.1), M("Metal", "BoothBody", (0.1, 0.1, 0.12), 0.4), p, bevel=0.03)
+    cube("BoothFace", 1, (0, -0.36, 0.6), (1.7, 0.02, 0.9), M("Glass", "BoothFace", (0.05, 0.05, 0.07), 0.1), p, bevel=0)
+    for sx in (-1, 1):
+        cube("BoothLED", 1, (sx * 0.6, -0.37, 0.6), (0.4, 0.02, 0.7), NEON_MAGENTA, p, bevel=0, outline=False)
+    cube("BoothTop", 1, (0, 0, 1.12), (1.9, 0.75, 0.05), DARKMETAL, p, bevel=0.01)
+    for sx in (-1, 1):
+        tube("Deck", 0.22, (sx * 0.4, 0, 1.17), (sx * 0.4, 0, 1.19), PLASTIC_BLK, p, r2=0.22)
+        tube("Platter", 0.17, (sx * 0.4, 0, 1.19), (sx * 0.4, 0, 1.205), CHROME_RT, p, r2=0.17, outline=False)
+    cube("Mixer", 1, (0, 0, 1.19), (0.3, 0.4, 0.04), PLASTIC_BLK, p, bevel=0.01)
+    for i in range(4):
+        tube("Fader", 0.012, (-0.1 + i * 0.07, 0.1, 1.21), (-0.1 + i * 0.07, 0.1, 1.235), NEON_CYAN, p, outline=False)
+    text("DJText", "DJ", (0, -0.38, 0.6), 0.3, NEON_CYAN, p, extrude=0.01)
+
+
+def speaker_stack(x):
+    p = prop("SpeakerStack", x)
+    cube("SpkCab", 1, (0, 0, 0.9), (0.7, 0.6, 1.8), M("Wood", "SpeakerBox", (0.08, 0.08, 0.09), 0.5), p, bevel=0.02)
+    for z in (0.5, 1.3):
+        tube("Woofer", 0.22, (0, -0.31, z), (0, -0.29, z), PLASTIC_BLK, p, r2=0.22)
+        tube("WooferCone", 0.12, (0, -0.3, z), (0, -0.28, z), M("Plastic", "Cone", (0.15, 0.15, 0.17), 0.4), p, r2=0.12, outline=False)
+    tube("Tweeter", 0.08, (0, -0.31, 0.95), (0, -0.29, 0.95), CHROME_RT, p, r2=0.08, outline=False)
+
+
+def pool_lounger(x):
+    p = prop("PoolLounger", x)
+    for sx in (-1, 1):
+        tube("LoungFoot", 0.02, (sx * 0.3, -0.6, 0.08), (sx * 0.3, 0.6, 0.08), CHROME_RT, p)
+        tube("LoungFoot2", 0.02, (sx * 0.3, -0.55, 0.08), (sx * 0.3, -0.55, 0.32), CHROME_RT, p, outline=False)
+    cube("LoungSeat", 1, (0, -0.1, 0.34), (0.66, 0.95, 0.07), CANVAS_CREAM, p, bevel=0.03, subsurf=1)
+    cube("LoungBack", 1, (0, 0.55, 0.62), (0.66, 0.07, 0.6), CANVAS_CREAM, p, rot=(R(-32), 0, 0), bevel=0.03, subsurf=1)
+    for k in range(4):
+        cube("LoungSlatGap", 1, (0, -0.5 + k * 0.26, 0.345), (0.66, 0.012, 0.012), TEAK, p, bevel=0, outline=False)
+    cube("LoungPillow", 1, (0, 0.5, 0.74), (0.5, 0.14, 0.1), CANVAS_RED, p, bevel=0.05, subsurf=1)
+
+
+def parasol(x):
+    p = prop("Parasol", x)
+    tube("ParasolPole", 0.03, (0, 0, 0), (0, 0, 2.2), TEAK, p)
+    cone("ParasolTop", 0.95, 0.05, 0.5, (0, 0, 2.45), CANVAS_RED, p)
+    for i in range(8):
+        a = 2 * math.pi * i / 8
+        tube("ParasolRib", 0.008, (0, 0, 2.2), (0.9 * math.cos(a), 0.9 * math.sin(a), 2.2), CHROME_RT, p, outline=False)
+
+
+def rooftop_bar(x):
+    p = prop("RooftopBar", x)
+    cube("BarBody", 1, (0, 0, 0.55), (2.6, 0.7, 1.1), M("WoodPlanks", "BarWood", (0.4, 0.26, 0.14), 0.5), p, bevel=0.02)
+    cube("BarTop", 1, (0, 0.05, 1.13), (2.8, 0.85, 0.06), MARBLE, p, bevel=0.02)
+    cube("BarFront", 1, (0, -0.36, 0.55), (2.5, 0.02, 0.9), M("Metal", "BarTrim", (0.75, 0.6, 0.3), 0.3, 0.8), p, bevel=0, outline=False)
+    for sx in (-1, 1):
+        cube("BarPanelLED", 1, (sx * 0.9, -0.37, 0.55), (0.6, 0.02, 0.7), NEON_CYAN, p, bevel=0, outline=False)
+    for sx in (-1, 0, 1):
+        cube("BackShelf", 1, (sx * 0.7, 0.3, 1.45), (0.5, 0.2, 0.02), GLASS, p, bevel=0, outline=False)
+
+
+def soda_bottle(x, name="SodaBottle", col=(0.8, 0.1, 0.15), look="Cola"):
+    p = prop(name, x)
+    glass = M("Glass", "Bottle" + look, col, 0.05)
+    tube("BtlBody", 0.055, (0, 0, 0), (0, 0, 0.2), glass, p, r2=0.055)
+    tube("BtlShoulder", 0.055, (0, 0, 0.2), (0, 0, 0.26), glass, p, r2=0.025, outline=False)
+    tube("BtlNeck", 0.02, (0, 0, 0.26), (0, 0, 0.32), glass, p, outline=False)
+    tube("BtlCap", 0.022, (0, 0, 0.32), (0, 0, 0.35), M("Metal", "Cap" + look, (0.8, 0.7, 0.2), 0.3, 0.7), p, r2=0.022, outline=False)
+    cube("BtlLabel", 1, (0, -0.055, 0.1), (0.07, 0.004, 0.09), PAPER, p, bevel=0, outline=False)
+
+
+def juice_bottle(x):
+    soda_bottle(x, "JuiceBottle", (0.95, 0.55, 0.1), "Orange")
+
+
+def planter_box(x):
+    p = prop("PlanterBox", x)
+    cube("PlanterBody", 1, (0, 0, 0.3), (1.4, 0.4, 0.6), CONCRETE, p, bevel=0.03)
+    cube("PlanterSoil", 1, (0, 0, 0.6), (1.3, 0.34, 0.05), SOIL, p, bevel=0, outline=False)
+    rng2 = random.Random(5)
+    for i in range(6):
+        bx = -0.55 + i * 0.22
+        tube("Grass", 0.02, (bx, rng2.uniform(-0.1, 0.1), 0.62), (bx + rng2.uniform(-0.1, 0.1), rng2.uniform(-0.1, 0.1), 1.1 + rng2.uniform(0, 0.3)), LEAF, p, r2=0.004, outline=False)
+
+
+def hot_tub(x):
+    p = prop("HotTub", x)
+    tube("TubShell", 1.1, (0, 0, 0), (0, 0, 0.7), TEAK, p, r2=1.1)
+    tube("TubInner", 0.98, (0, 0, 0.1), (0, 0, 0.72), POOLTILE, p, r2=0.98, outline=False)
+    tube("TubWater", 0.94, (0, 0, 0.5), (0, 0, 0.56), POOLWATER, p, r2=0.94, outline=False)
+    torus("TubRim", 1.05, 0.06, (0, 0, 0.7), TEAK, p)
+
+
+BUILDERS_7 = [dj_booth, speaker_stack, pool_lounger, parasol, rooftop_bar, soda_bottle, juice_bottle, planter_box, hot_tub]
+
+
 def extra_decor(x):
     """Variants of the parametric builders so the office has more than one of each look."""
     neon_sign(x, "NeonSignMoney", "MONEY NEVER SLEEPS", NEON_GOLD)
@@ -2130,7 +2234,7 @@ BUILDERS = [office_chair, desk_set, sofa, coffee_table, plant_fiddle, plant_snak
 
 def jobs():
     """Every prop as (slots, build(x)). Paintings/poses/variants are wrapped so parts can split the list evenly."""
-    out = [(1, b) for b in BUILDERS + BUILDERS_2 + BUILDERS_3 + BUILDERS_4 + BUILDERS_5 + BUILDERS_6]
+    out = [(1, b) for b in BUILDERS + BUILDERS_2 + BUILDERS_3 + BUILDERS_4 + BUILDERS_5 + BUILDERS_6 + BUILDERS_7]
     out.append((4, extra_decor))
     for pose, curls in POSES.items():
         out.append((1, lambda x, pose=pose, curls=curls: hand_pose(x, pose, curls)))

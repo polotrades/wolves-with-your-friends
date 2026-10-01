@@ -43,5 +43,7 @@ Config.PROP_TURN_DEGREES = 0
 -- Optional sound asset ids (Creator Store). Leave "" to skip.
 Config.RING_SOUND_ID = ""
 Config.CHEER_SOUND_ID = ""
+Config.DJ_MUSIC_ID = "" -- rooftop DJ loop (Creator Store audio); leave "" for a silent stage
+Config.ELEVATOR_DING_ID = ""
 
 return Config

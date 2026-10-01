@@ -35,6 +35,8 @@ local NAMES = {
 	"Drop", -- player -> server: let go / throw (part, velocity)
 	"Interact", -- player -> server: (kind, target) eat / pour / print / etc.
 	"Fx", -- server -> all: (kind, cframe) spawn a shared effect (puddle, splash, print)
+	"Floor", -- player -> server: travel between "office" and "roof"
+	"Music", -- server -> all: (on, assetId) DJ music toggle for client ambience
 }
 
 local Net = {}

@@ -125,12 +125,17 @@ The owner prefers **quality over speed** and wants **models built in Blender fir
    - Trash bins (TrashBin / RecyclingBins) swallow items dropped in and spill them when the bin is thrown.
    - The fish tank breaks when hit hard and swaps in FishTankBroken (needs the imported model; falls back to a box).
    - Remaining: knock-OFF of the roof is step 4; thrown-item damage to players is minimal for now.
-4. **Luxury rooftop (Blender first).**
-   - Elevator buttons ROOFTOP / OFFICE.
-   - A big pool, bars, a DJ stage with music, and lots of decor.
-   - Breakable soda/juice bottles with liquid, and money and papers on the floor.
-   - Throwing things off the roof; thrown items can knock people off.
-   - Falling respawns you at your last safe spot.
+4. ~~**Luxury rooftop (Blender first).**~~ Done (not yet tested; needs the new props re-exported from Blender).
+   - Blender: `props.py` has a new `BUILDERS_7` group (DJBooth, SpeakerStack, PoolLounger, Parasol, RooftopBar,
+     SodaBottle, JuiceBottle, PlanterBox, HotTub). Re-run the prop build + `merge_props.py` + `export_props.py` to
+     get them into the packs and into `PropLooks.lua`; until then the rooftop shows grey-box fallbacks for them.
+     (bpy isn't installed in this session, so the packs were NOT regenerated here.)
+   - `server/RooftopBuilder.lua`: an open-air deck 90 studs above the office with a glass parapet, pool + hot tub,
+     two bars, a DJ stage, loungers under parasols, planters, string lights, scattered money/papers, and breakable
+     bottles. `server/RoofService.lua`: ROOFTOP button in each elevator car and an OFFICE kiosk on the roof, DJ
+     music (set `Config.DJ_MUSIC_ID`), bottles shatter when thrown, thrown items can knock players off, and a fall
+     respawns you at your last safe spot.
+   - Config: `DJ_MUSIC_ID` and `ELEVATOR_DING_ID` (both default "").
 5. **Character menu (only before spawning).**
    - Lots of clothes, hair, accessories, skin colors, boy/girl, body types and animation packs.
    - A draggable, zoomable 3D preview.
