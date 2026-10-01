@@ -53,6 +53,24 @@ Net.Spawn.OnServerEvent:Connect(function(player, look)
 		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 		hum.NameDisplayDistance = 0
 		hum.HealthDisplayDistance = 0
+		-- Put the player on the clear lobby spot ourselves. Don't trust the SpawnLocation: with Teams or an odd
+		-- spawn the engine can drop you at the world origin, which is the middle of the desk-packed trading floor,
+		-- so you end up stuck inside furniture and can't move.
+		local hrp = char:WaitForChild("HumanoidRootPart") :: BasePart
+		if office.lobby then
+			char:PivotTo(office.lobby)
+			-- a couple more times as the character settles, so nothing yanks it back
+			task.spawn(function()
+				for _ = 1, 3 do
+					task.wait(0.1)
+					if hrp and hrp.Parent and office.lobby then
+						char:PivotTo(office.lobby)
+					end
+				end
+			end)
+		end
+		hum.WalkSpeed = 16
+		hum.JumpPower = 50
 		CharacterService.dress(player, char)
 		hum.Died:Connect(function()
 			task.wait(4)

@@ -438,7 +438,9 @@ function Menu.show()
 		end
 	end
 	local items = {
-		{ "QUICK MATCH", UI.colors.gold, quickMatch },
+		{ "QUICK MATCH", UI.colors.gold, function()
+			quickMatch()
+		end },
 		{ "CREATE PRIVATE OFFICE", UI.colors.panel2, function()
 			toast(buttons, "Private offices are coming in the next update!")
 		end },

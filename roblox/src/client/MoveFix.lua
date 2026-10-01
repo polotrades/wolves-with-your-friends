@@ -30,6 +30,12 @@ function MoveFix.init()
 		if hrp.Anchored then
 			hrp.Anchored = false
 		end
+		-- if we somehow fell over / ragdolled / got stuck in physics, get back up and run
+		local st = hum:GetState()
+		if st == Enum.HumanoidStateType.FallingDown or st == Enum.HumanoidStateType.Ragdoll
+			or st == Enum.HumanoidStateType.Physics or st == Enum.HumanoidStateType.Seated then
+			hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+		end
 		local cam = Workspace.CurrentCamera
 		if cam and cam.CameraType == Enum.CameraType.Scriptable then
 			cam.CameraType = Enum.CameraType.Custom
