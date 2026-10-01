@@ -23,34 +23,6 @@ local menuScene: Folder?
 local musicFolder: Folder?
 local musicOn = false
 
-local function buildHelicopter(parent: Instance, color: Color3)
-	local m = Instance.new("Model")
-	local function p(name: string, size: Vector3, offset: CFrame, c: Color3, shape: Enum.PartType?)
-		local part = Instance.new("Part")
-		part.Name = name
-		part.Anchored = true
-		part.CanCollide = false
-		part.CastShadow = false
-		if shape then
-			part.Shape = shape
-		end
-		part.Size = size
-		part.Color = c
-		part.Material = Enum.Material.SmoothPlastic
-		part.CFrame = offset
-		part.Parent = m
-		return part
-	end
-	local body = p("Body", Vector3.new(6, 6, 12), CFrame.new(), color, Enum.PartType.Ball)
-	p("Tail", Vector3.new(1.4, 1.4, 12), CFrame.new(0, 0.8, 10), color)
-	p("Fin", Vector3.new(0.4, 3, 2), CFrame.new(0, 2.5, 15.5), color)
-	p("Window", Vector3.new(4.6, 3, 4), CFrame.new(0, 0.8, -3.6), Color3.fromRGB(120, 180, 230), Enum.PartType.Ball)
-	local rotor = p("Rotor", Vector3.new(22, 0.3, 1.2), CFrame.new(0, 3.8, 0), Color3.fromRGB(30, 30, 30))
-	m.PrimaryPart = body
-	m.Parent = parent
-	return m, rotor
-end
-
 -- The menu background is the real office floor: the camera sweeps the trading floor while papers and cash swirl in
 -- the air and the desk monitors keep running their live charts. Calm, rich piano plays over soft phone rings and
 -- the rustle of paper, and helicopters circle outside the windows.
@@ -157,16 +129,17 @@ end
 
 local function startFlyover()
 	local cam = Workspace.CurrentCamera
-	cam.CameraType = Enum.CameraType.Scriptable
 	local folder = Instance.new("Folder")
 	folder.Name = "MenuScene"
 	folder.Parent = Workspace
 	menuScene = folder
 
-	-- frame the real office interior (centre on Floor100's parts)
+	-- find the office interior bounds (wait briefly for it to replicate from the server)
 	local floor = Workspace:FindFirstChild("Floor100")
-	local center = Vector3.new(0, 9, 0)
-	local extent = 42
+	if not floor then
+		floor = Workspace:WaitForChild("Floor100", 8)
+	end
+	local floorY, centerX, centerZ, spanX, spanZ, ceil = 3, 0, 0, 120, 90, 24
 	if floor then
 		local lo = Vector3.new(1e9, 1e9, 1e9)
 		local hi = Vector3.new(-1e9, -1e9, -1e9)
@@ -177,49 +150,43 @@ local function startFlyover()
 			end
 		end
 		if lo.X < hi.X then
-			center = Vector3.new((lo.X + hi.X) / 2, (lo.Y + hi.Y) / 2 + 4, (lo.Z + hi.Z) / 2)
-			extent = math.clamp(math.min(hi.X - lo.X, hi.Z - lo.Z) * 0.3, 24, 60)
+			floorY, ceil = lo.Y, hi.Y
+			centerX, centerZ = (lo.X + hi.X) / 2, (lo.Z + hi.Z) / 2
+			spanX, spanZ = hi.X - lo.X, hi.Z - lo.Z
 		end
 	end
+	-- camera sits at desk height (never above the ceiling) and pans near the back wall, looking across the floor
+	local camY = math.min(floorY + 6, (floorY + ceil) / 2)
+	local eye = Vector3.new(centerX, camY, centerZ + spanZ * 0.42)
+	local target = Vector3.new(centerX, camY - 1, centerZ - spanZ * 0.15)
+	cam.CameraType = Enum.CameraType.Scriptable
+	cam.CFrame = CFrame.lookAt(eye, target)
 
-	-- flying papers + money swirling over the floor
+	-- flying papers + money over the floor
 	local bits = {}
-	for i = 1, 60 do
+	for i = 1, 50 do
 		local money = i % 3 == 0
 		local pp = mPart(folder, money and Vector3.new(1.0, 0.04, 0.45) or Vector3.new(0.9, 0.03, 1.2),
-			CFrame.new(center + Vector3.new(math.random(-30, 30), math.random(0, 16), math.random(-24, 24))),
+			CFrame.new(centerX + math.random(-30, 30), floorY + math.random(2, 14), centerZ + math.random(-24, 24)),
 			money and Color3.fromRGB(90, 170, 90) or Color3.fromRGB(250, 250, 245))
-		table.insert(bits, { part = pp, phase = math.random() * 6.28, radius = math.random(10, 34),
-			y0 = pp.Position.Y, spin = math.random(3, 8), rise = math.random(4, 12) })
-	end
-
-	-- helicopters circling outside the windows
-	local choppers = {}
-	for i, c in { Color3.fromRGB(230, 60, 50), Color3.fromRGB(240, 240, 240), Color3.fromRGB(30, 30, 35) } do
-		local m, rotor = buildHelicopter(folder, c)
-		table.insert(choppers, { model = m, rotor = rotor, radius = 120 + i * 40, height = center.Y + 40 + i * 16,
-			speed = 0.08 + i * 0.03, phase = i * 2.1 })
+		table.insert(bits, { part = pp, phase = math.random() * 6.28, rx = math.random(10, 30), rz = math.random(8, 24),
+			y0 = pp.Position.Y, spin = math.random(3, 8), rise = math.random(3, 9) })
 	end
 
 	startMenuAudio()
 	local t0 = os.clock()
 	flyConn = RunService.RenderStepped:Connect(function()
 		local t = os.clock() - t0
-		local a = t * 0.08
-		cam.CFrame = CFrame.lookAt(center + Vector3.new(math.cos(a) * extent, 5 + math.sin(t * 0.3) * 2, math.sin(a) * extent),
-			center + Vector3.new(math.cos(a + 1.4) * 6, -2, math.sin(a + 1.4) * 6))
+		-- gentle side-to-side pan across the floor, staying inside the room
+		local sway = math.sin(t * 0.18) * spanX * 0.28
+		eye = Vector3.new(centerX + sway, camY, centerZ + spanZ * 0.42)
+		target = Vector3.new(centerX - sway * 0.4, camY - 1, centerZ - spanZ * 0.15)
+		cam.CFrame = CFrame.lookAt(eye, target)
 		for _, pr in bits do
 			local b = pr.phase + t * 0.5
 			local y = pr.y0 + math.sin(t * 0.6 + pr.phase) * pr.rise
-			pr.part.CFrame = CFrame.new(center.X + math.cos(b) * pr.radius, y, center.Z + math.sin(b) * pr.radius)
+			pr.part.CFrame = CFrame.new(centerX + math.cos(b) * pr.rx, y, centerZ + math.sin(b) * pr.rz)
 				* CFrame.Angles(t * pr.spin * 0.3, t * pr.spin * 0.2, t * pr.spin * 0.25)
-		end
-		for _, h in choppers do
-			local b = h.phase + t * h.speed
-			local pos = Vector3.new(math.cos(b) * h.radius, h.height, math.sin(b) * h.radius)
-			local ahead = Vector3.new(math.cos(b + 0.05) * h.radius, pos.Y, math.sin(b + 0.05) * h.radius)
-			h.model:PivotTo(CFrame.lookAt(pos, ahead))
-			h.rotor.CFrame = h.model:GetPivot() * CFrame.new(0, 3.8, 0) * CFrame.Angles(0, t * 25, 0)
 		end
 	end)
 end
