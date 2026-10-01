@@ -146,11 +146,20 @@ end
 
 -- ------------------------------------------------------------------ background: candlesticks, cash, ticker
 local function background(parent: Instance)
-	local bg = UI.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(10, 12, 22), BorderSizePixel = 0,
+	-- matches the game: dark navy ground (UI.colors.bg) with a warm gold glow, like the office at sunset
+	local bg = UI.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = UI.colors.bg, BorderSizePixel = 0,
 		Parent = parent })
-	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(14, 18, 36), Color3.fromRGB(6, 8, 16)),
-		Parent = bg })
-	-- candlesticks drifting across
+	UI.new("UIGradient", { Rotation = 90, Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, UI.colors.panel),
+		ColorSequenceKeypoint.new(1, UI.colors.dark),
+	}), Parent = bg })
+	-- a soft gold glow top-center (the Wall Street gold accent)
+	local glow = UI.new("Frame", { Size = UDim2.fromScale(1.2, 0.9), Position = UDim2.fromScale(-0.1, -0.35),
+		BackgroundColor3 = UI.colors.gold, BackgroundTransparency = 0, BorderSizePixel = 0, Parent = bg })
+	UI.new("UIGradient", { Rotation = 90, Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.8), NumberSequenceKeypoint.new(1, 1),
+	}), Parent = glow })
+	-- candlesticks drifting across (game green/red)
 	local rng = Random.new(21)
 	local y = 0.6
 	for i = 0, 40 do
@@ -158,22 +167,22 @@ local function background(parent: Instance)
 		local h = rng:NextNumber(0.03, 0.09)
 		y = math.clamp(y + (up and -h or h) * 0.5, 0.2, 0.85)
 		UI.new("Frame", { Size = UDim2.fromScale(0.012, h), Position = UDim2.fromScale(0.02 + i * 0.024, y),
-			BackgroundColor3 = up and Color3.fromRGB(40, 180, 100) or Color3.fromRGB(200, 60, 70), BorderSizePixel = 0,
-			BackgroundTransparency = 0.35, Parent = bg })
+			BackgroundColor3 = up and UI.colors.green or UI.colors.red, BorderSizePixel = 0,
+			BackgroundTransparency = 0.4, Parent = bg })
 	end
-	-- floating cash + $
+	-- floating cash + $ in the gold accent
 	for _ = 1, 14 do
 		UI.text(bg, rng:NextNumber() < 0.5 and "$" or "💵", { Size = UDim2.fromScale(0.05, 0.08),
-			Position = UDim2.fromScale(rng:NextNumber(0, 0.95), rng:NextNumber(0, 0.9)), TextColor3 = Color3.fromRGB(90, 200, 120),
-			TextTransparency = rng:NextNumber(0.4, 0.8), Rotation = rng:NextNumber(-30, 30) })
+			Position = UDim2.fromScale(rng:NextNumber(0, 0.95), rng:NextNumber(0, 0.9)), TextColor3 = UI.colors.gold,
+			TextTransparency = rng:NextNumber(0.5, 0.85), Rotation = rng:NextNumber(-30, 30) })
 	end
 	-- ticker along the bottom
 	local tickerBack = UI.new("Frame", { Size = UDim2.new(1, 0, 0, 30), Position = UDim2.new(0, 0, 1, -30),
-		BackgroundColor3 = Color3.fromRGB(0, 0, 0), BackgroundTransparency = 0.3, BorderSizePixel = 0, ClipsDescendants = true,
+		BackgroundColor3 = UI.colors.dark, BackgroundTransparency = 0.2, BorderSizePixel = 0, ClipsDescendants = true,
 		Parent = bg })
 	local syms = "BMM +4.2%   WOLF +9.9%   YACHT -1.1%   MOON +42%   DUCK +0.4%   PUMP +15%   GOLD +2.0%   LAMBO +88%   "
 	local ticker = UI.label(tickerBack, syms:rep(3), 16, { Size = UDim2.new(4, 0, 1, 0), Position = UDim2.fromScale(1, 0),
-		TextColor3 = Color3.fromRGB(90, 220, 130), Font = Enum.Font.Code, TextXAlignment = Enum.TextXAlignment.Left })
+		TextColor3 = UI.colors.green, Font = Enum.Font.Code, TextXAlignment = Enum.TextXAlignment.Left })
 	task.spawn(function()
 		while ticker.Parent do
 			ticker.Position = UDim2.fromScale(1 - (os.clock() * 0.05) % 2, 0)
