@@ -612,9 +612,11 @@ function OfficeBuilder.build()
 	for _, e in office.elevators do
 		e.setOpen(true, true)
 	end
+	-- spawn on the clear lobby walkway in front of the elevators (the layout's spawn point), standing on the floor
+	-- and looking east into the trading floor. Do NOT offset toward the room: the reception desk sits a few studs
+	-- east and the player would spawn stuck inside it.
 	local sp = Layout.points.spawn.p
-	-- a few studs off the west wall so there's room behind you, standing on the floor, looking east into the office
-	local spawnPos = ArtLibrary.pos({ sp[1] + 4, sp[2], sp[3] }) + Vector3.new(0, 3.5, 0)
+	local spawnPos = ArtLibrary.pos({ sp[1], sp[2], sp[3] }) + Vector3.new(0, 3.5, 0)
 	office.lobby = CFrame.lookAt(spawnPos, spawnPos + Vector3.new(1, 0, 0))
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "LobbySpawn"
