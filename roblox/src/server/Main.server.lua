@@ -19,19 +19,26 @@ local PianoService = require(script.Parent:WaitForChild("PianoService"))
 local GameLoop = require(script.Parent:WaitForChild("GameLoop"))
 local CharacterService = require(script.Parent:WaitForChild("CharacterService"))
 
-local office = OfficeBuilder.build()
-local rooftop = RooftopBuilder.build(office)
-NPCGuide.init(office)
-Shop.init()
-Casino.init()
-Physics.init()
-Interactions.init(Props)
-RoofService.init(office, rooftop)
-RaidService.init(office, rooftop)
-PianoService.init()
-CallService.init(office)
-CharacterService.init()
-GameLoop.run(office)
+-- Build the office first (we need its clear spawn point), then wire up SPAWNING before anything else, so a crash in
+-- any later builder can never stop players from getting a character. Each remaining init is guarded for the same
+-- reason: one broken system must not take down the whole server and leave you unable to spawn, move or look.
+local office: any
+do
+	local ok, result = pcall(OfficeBuilder.build)
+	if ok then
+		office = result
+	else
+		warn("[init] OfficeBuilder.build failed:", result)
+		office = { folder = nil, desks = {}, elevators = {} }
+	end
+end
+
+local function safeInit(name: string, fn: () -> ())
+	local ok, err = pcall(fn)
+	if not ok then
+		warn("[init] " .. name .. " failed:", err)
+	end
+end
 
 local joined: { [Player]: boolean } = {}
 
@@ -84,4 +91,33 @@ end)
 
 Players.PlayerRemoving:Connect(function(player)
 	joined[player] = nil
+end)
+
+-- everything else, guarded so a failure in one system can't stop spawning/movement
+local rooftop
+safeInit("RooftopBuilder.build", function()
+	rooftop = RooftopBuilder.build(office)
+end)
+safeInit("NPCGuide.init", function()
+	NPCGuide.init(office)
+end)
+safeInit("Shop.init", Shop.init)
+safeInit("Casino.init", Casino.init)
+safeInit("Physics.init", Physics.init)
+safeInit("Interactions.init", function()
+	Interactions.init(Props)
+end)
+safeInit("RoofService.init", function()
+	RoofService.init(office, rooftop)
+end)
+safeInit("RaidService.init", function()
+	RaidService.init(office, rooftop)
+end)
+safeInit("PianoService.init", PianoService.init)
+safeInit("CallService.init", function()
+	CallService.init(office)
+end)
+safeInit("CharacterService.init", CharacterService.init)
+safeInit("GameLoop.run", function()
+	GameLoop.run(office)
 end)
