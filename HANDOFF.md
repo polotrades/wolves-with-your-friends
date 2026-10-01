@@ -173,6 +173,8 @@ Owner to-do before/while testing:
    - Filler speech while the caller thinks + interruption (talking cuts the caller off): `Voice.filler` / `Voice.stop`.
    - Bystanders hear calls at the desk: `CallSpeak` broadcast + `client/SpatialVoice.lua` (AudioEmitter per desk).
    - No real people: all callers are fictional (kept the existing rule).
+   - Off-topic / random talk gets a mood-based reaction (ClientAI `OFFTOPIC` + AI prompt): a hooked caller laughs
+     and plays along, a cold/paranoid one gets confused and more suspicious (CallService bumps per-call suspicion).
 7. ~~**Office suspicion and raid.**~~ Done (not yet tested).
    - `server/Suspicion.lua`: a floor-wide 0-100 meter. Rises when a caller gets spooked and hangs up (+14) and from
      chaos (thrown items), decays when calm, and a clean deal shaves a little off. Broadcast in Status, so the

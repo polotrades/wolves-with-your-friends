@@ -51,6 +51,7 @@ local function systemPrompt(profile, secrets): string
 		"Raise interest (up to +20) when the broker is funny, confident, flattering or creative. Lower it (down to -20)",
 		"when they are rude, boring, repetitive or pushy. Hang up if the broker is very rude or your interest is 0.",
 		"If a note says a different broker grabbed the phone, react to that with surprise.",
+		"If the broker says something random or unrelated to the call, react by your current interest level: when it is high, laugh and play along; when it is low, get confused and a little suspicious and steer back to why they called.",
 		"Answer only with the JSON object.",
 	}, " ")
 end
@@ -209,6 +210,30 @@ local function echoWord(t: string): string?
 	return #words > 0 and words[math.random(1, #words)] or nil
 end
 
+-- Reactions when the broker says something off-topic / random. Picked by mood: a warmed-up caller plays along,
+-- a cold one gets confused and a little suspicious.
+local OFFTOPIC = {
+	cold = {
+		"What? What does that have to do with my money?",
+		"That's... a weird thing to say. Why are you really calling?",
+		"Hold on. Are you actually a broker, or just a weirdo with my number?",
+		"Okaaay. That was random. I'm watching you now.",
+		"Hmm. You're not making sense. Should I be worried?",
+	},
+	warm = {
+		"Ha, okay, that was random. Anyway... what's this deal again?",
+		"You're a strange one. Kinda fun, though. Go on.",
+		"I have no idea what you mean, but keep talking.",
+		"Lol. Okay. Back to the money part?",
+	},
+	hot = {
+		"HAHA you're hilarious! Okay, okay, I'm still in. What's next?",
+		"You crack me up! Fine, you've earned another minute.",
+		"Ha! I love talking to you. Say more weird stuff AND take my money.",
+		"Best phone call all week. Okay, where do I sign?",
+	},
+}
+
 local function canned(call, text: string)
 	local t = text:lower()
 	local name = call.profile.name
@@ -240,6 +265,7 @@ local function canned(call, text: string)
 			interest_change = delta - 3, hang_up = false }
 	end
 	local reply
+	local offtopic = false
 	if rude then
 		reply = pick(call, LINES.rude)
 	elseif #call.transcript <= 2 and (t:find("hello") or t:find("^hi") or t:find("hey")) then
@@ -257,6 +283,15 @@ local function canned(call, text: string)
 			end
 			if reply then
 				break
+			end
+		end
+		-- 1b) nothing matched -> treat it as off-topic and react by mood
+		if not reply and not t:find("%?") and math.random() < 0.7 then
+			local pool = newTrust < 35 and OFFTOPIC.cold or newTrust < Config.REVEAL_TRUST and OFFTOPIC.warm or OFFTOPIC.hot
+			reply = pick(call, pool)
+			offtopic = true
+			if pool == OFFTOPIC.cold then
+				delta = math.min(delta, -2) -- random nonsense cools a wary caller
 			end
 		end
 		-- 2) the client's own signature line, once per call
@@ -280,7 +315,7 @@ local function canned(call, text: string)
 			reply = pick(call, newTrust < 35 and LINES.cold or newTrust < Config.REVEAL_TRUST and LINES.warm or LINES.hot)
 		end
 	end
-	return { reply = reply, interest_change = delta, hang_up = newTrust <= 0, offline = true }
+	return { reply = reply, interest_change = delta, hang_up = newTrust <= 0, offline = true, offtopic = offtopic }
 end
 
 -- Pull the JSON object out of a reply, even if the model wrapped it in extra words.

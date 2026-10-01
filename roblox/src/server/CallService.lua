@@ -402,6 +402,16 @@ local function onSay(player: Player, text: any)
 	if call.closed then
 		return
 	end
+	-- off-topic / random talk makes a wary caller more suspicious, but a hooked one just laughs it off
+	if res.offtopic then
+		local bump = call.trust < Config.REVEAL_TRUST and 7 or 1
+		if call.profile.type == "paranoid" then
+			bump += 5
+		elseif call.profile.type == "trusting" then
+			bump = 1
+		end
+		call.suspicion = math.clamp(call.suspicion + bump, 0, 100)
+	end
 	if res.offline and not call.warnedOffline then
 		call.warnedOffline = true
 		Net.Toast:FireClient(player, "AI clients offline - using backup lines. Check Output for [ClientAI].")
