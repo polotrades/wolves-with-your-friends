@@ -104,28 +104,52 @@ local function optionRow(parent: Frame, label: string, options: { string }, curr
 	show()
 end
 
+-- everyone shares one regular body; you just pick one option per category and mix them
+local function pick(key, list)
+	return function()
+		return look[key]
+	end, function(v)
+		look[key] = v
+		refreshRig()
+	end
+end
+local function pickSwatch(key, list)
+	local get, _set = pick(key, list)
+	return get, function(v)
+		look[key] = v
+		refreshRig()
+		Customizer.rebuildTab()
+	end
+end
+
 local TABS: { Tab } = {
-	{ name = "Body", build = function(p)
-		optionRow(p, "Build", Appearance.GENDERS, function() return look.gender end, function(v) look.gender = v; refreshRig() end)
-		optionRow(p, "Body type", Appearance.BODIES, function() return look.body end, function(v) look.body = v; refreshRig() end)
-		optionRow(p, "Moves", Appearance.ANIM_PACKS, function() return look.anim end, function(v) look.anim = v end)
-	end },
 	{ name = "Skin", build = function(p)
-		swatchRow(p, "Skin tone", Appearance.SKINS, function() return look.skin end, function(v) look.skin = v; refreshRig(); Customizer.rebuildTab() end)
+		local g, s = pickSwatch("skin", Appearance.SKINS)
+		swatchRow(p, "Skin tone", Appearance.SKINS, g, s)
 	end },
-	{ name = "Hair", build = function(p)
-		optionRow(p, "Style", Appearance.HAIR, function() return look.hair end, function(v) look.hair = v; refreshRig() end)
-		swatchRow(p, "Color", Appearance.HAIR_COLORS, function() return look.hairColor end, function(v) look.hairColor = v; refreshRig(); Customizer.rebuildTab() end)
+	{ name = "Head", build = function(p)
+		optionRow(p, "Hair style", Appearance.HAIR, pick("hair", Appearance.HAIR))
+		local g, s = pickSwatch("hairColor", Appearance.HAIR_COLORS)
+		swatchRow(p, "Hair color", Appearance.HAIR_COLORS, g, s)
+		optionRow(p, "Glasses", Appearance.GLASSES, pick("glasses", Appearance.GLASSES))
+		optionRow(p, "Hat", Appearance.HATS, pick("hat", Appearance.HATS))
 	end },
-	{ name = "Face", build = function(p)
-		optionRow(p, "Glasses", Appearance.GLASSES, function() return look.glasses end, function(v) look.glasses = v; refreshRig() end)
+	{ name = "Top", build = function(p)
+		optionRow(p, "Clothing", Appearance.TORSOS, pick("torso", Appearance.TORSOS))
+		local g, s = pickSwatch("topColor", Appearance.CLOTH_COLORS)
+		swatchRow(p, "Top color", Appearance.CLOTH_COLORS, g, s)
+		optionRow(p, "Arms", Appearance.ARMS, pick("arms", Appearance.ARMS))
+		optionRow(p, "Hands", Appearance.HANDS, pick("hands", Appearance.HANDS))
 	end },
-	{ name = "Clothes", build = function(p)
-		optionRow(p, "Outfit", Appearance.OUTFITS, function() return look.outfit end, function(v) look.outfit = v; refreshRig() end)
-		swatchRow(p, "Color", Appearance.OUTFIT_COLORS, function() return look.outfitColor end, function(v) look.outfitColor = v; refreshRig(); Customizer.rebuildTab() end)
+	{ name = "Bottom", build = function(p)
+		optionRow(p, "Pants", Appearance.LEGS, pick("legs", Appearance.LEGS))
+		local g, s = pickSwatch("bottomColor", Appearance.CLOTH_COLORS)
+		swatchRow(p, "Pants color", Appearance.CLOTH_COLORS, g, s)
+		optionRow(p, "Shoes", Appearance.SHOES, pick("shoes", Appearance.SHOES))
 	end },
-	{ name = "Hats", build = function(p)
-		optionRow(p, "Hat", Appearance.HATS, function() return look.hat end, function(v) look.hat = v; refreshRig() end)
+	{ name = "Extras", build = function(p)
+		optionRow(p, "Accessory", Appearance.ACCESSORY, pick("accessory", Appearance.ACCESSORY))
+		optionRow(p, "Moves", Appearance.ANIM_PACKS, function() return look.anim end, function(v) look.anim = v end)
 	end },
 }
 
@@ -300,8 +324,9 @@ function Customizer.open(done: (any) -> ())
 	-- RANDOM + BACK under the preview, ENTER under the panel
 	UI.button(gui, "🎲 RANDOM", UI.os.surface2, { Size = UDim2.new(0.21, 0, 0, 54), Position = UDim2.new(0, 50, 1, -94) }, function()
 		for key, list in { skin = Appearance.SKINS, hair = Appearance.HAIR, hairColor = Appearance.HAIR_COLORS,
-			hat = Appearance.HATS, glasses = Appearance.GLASSES, outfit = Appearance.OUTFITS, outfitColor = Appearance.OUTFIT_COLORS,
-			body = Appearance.BODIES, gender = Appearance.GENDERS, anim = Appearance.ANIM_PACKS } do
+			hat = Appearance.HATS, glasses = Appearance.GLASSES, torso = Appearance.TORSOS, topColor = Appearance.CLOTH_COLORS,
+			arms = Appearance.ARMS, hands = Appearance.HANDS, legs = Appearance.LEGS, bottomColor = Appearance.CLOTH_COLORS,
+			shoes = Appearance.SHOES, accessory = Appearance.ACCESSORY, anim = Appearance.ANIM_PACKS } do
 			(look :: any)[key] = math.random(1, #list)
 		end
 		refreshRig()
