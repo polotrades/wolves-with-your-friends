@@ -356,4 +356,54 @@ function Appearance.apply(char: Model, look)
 	Appearance.applyScale(char, look)
 end
 
+-- A headset (band + earcups + boom mic) and a mouth on every character. The mouth is animated by TalkingMouths
+-- from the player's voice level. Call after apply(); it lives in its own folder so re-dressing keeps it.
+function Appearance.addGear(char: Model)
+	local head = char:FindFirstChild("Head") :: BasePart?
+	if not head then
+		return
+	end
+	local old = char:FindFirstChild("Gear")
+	if old then
+		old:Destroy()
+	end
+	local folder = Instance.new("Folder")
+	folder.Name = "Gear"
+	folder.Parent = char
+	local hs = head.Size
+	local function part(name, size, offset, color, shape)
+		local p = Instance.new("Part")
+		p.Name = name
+		if shape then
+			p.Shape = shape
+		end
+		p.Size = size
+		p.Color = color
+		p.Material = Enum.Material.SmoothPlastic
+		p.CanCollide = false
+		p.Massless = true
+		p.CFrame = head.CFrame * offset
+		p.Parent = folder
+		local w = Instance.new("WeldConstraint")
+		w.Part0, w.Part1 = head, p
+		w.Parent = p
+		return p
+	end
+	local dark = Color3.fromRGB(28, 28, 32)
+	part("HeadsetBand", Vector3.new(hs.X * 1.14, hs.Y * 0.2, hs.Z * 0.3), CFrame.new(0, hs.Y * 0.5, 0), dark)
+	for _, sx in { -1, 1 } do
+		part("Earcup", Vector3.new(hs.X * 0.2, hs.Y * 0.4, hs.Z * 0.5), CFrame.new(sx * hs.X * 0.58, hs.Y * 0.05, 0), dark)
+	end
+	-- boom mic reaching toward the mouth
+	part("MicBoom", Vector3.new(0.08, 0.08, hs.Z * 0.7), CFrame.new(-hs.X * 0.5, -hs.Y * 0.15, -hs.Z * 0.35)
+		* CFrame.Angles(math.rad(20), math.rad(30), 0), dark)
+	part("MicTip", Vector3.new(0.16, 0.16, 0.16), CFrame.new(-hs.X * 0.15, -hs.Y * 0.28, -hs.Z * 0.55),
+		Color3.fromRGB(60, 60, 70), Enum.PartType.Ball)
+	-- the mouth (TalkingMouths opens it)
+	local mouth = part("Mouth", Vector3.new(hs.X * 0.28, hs.Y * 0.06, 0.06), CFrame.new(0, -hs.Y * 0.22, -hs.Z * 0.5),
+		Color3.fromRGB(90, 40, 45))
+	mouth:SetAttribute("BaseY", mouth.Size.Y)
+	return mouth
+end
+
 return Appearance

@@ -57,6 +57,7 @@ function CharacterService.dress(player: Player, char: Model)
 		char:WaitForChild("Head", 5)
 		local ok, err = pcall(function()
 			Appearance.apply(char, look)
+			Appearance.addGear(char)
 			applyAnimPack(char, Appearance.ANIM_PACKS[look.anim])
 		end)
 		if not ok then

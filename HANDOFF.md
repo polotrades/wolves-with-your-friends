@@ -179,7 +179,11 @@ The owner prefers **quality over speed** and wants **models built in Blender fir
      (`OfficeBuilder`), phone ring (existing `RING_SOUND_ID`), DJ music (`RoofService`).
    - Playable piano: `server/PianoService.lua` adds a "Play Piano" prompt to the grand piano; `client/Piano.lua` is
      the keyboard (click or A S D F G H J), and notes play at the piano for everyone.
-10. **Talking mouths** (AudioAnalyzer on each player's voice) and a **headset mic** on every character.
+10. ~~**Talking mouths and headset mics.**~~ Done (not yet tested).
+    - `Appearance.addGear(char)`: a headset (band + earcups + boom mic) and a Mouth part on every character, added
+      after dressing (in `CharacterService`).
+    - `client/TalkingMouths.lua`: wires an AudioAnalyzer to each player's voice input and opens their Mouth by how
+      loud they're talking, so you can see who's speaking. Closed where the Audio API / a mic isn't available.
 
 ## Notes
 - The owner can't send video. They test in Studio and send screenshots.
