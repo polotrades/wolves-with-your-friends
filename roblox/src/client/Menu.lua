@@ -5,6 +5,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local SoundService = game:GetService("SoundService")
 
 local UI = require(script.Parent:WaitForChild("UI"))
 local Voice = require(script.Parent:WaitForChild("Voice"))
@@ -16,7 +18,10 @@ local Menu = { onSpawn = nil :: (() -> ())? }
 local player = Players.LocalPlayer
 local gui: ScreenGui
 local flyConn: RBXScriptConnection?
-local helicopters: Folder?
+local menuScene: Folder?
+local musicFolder: Folder?
+local musicOn = false
+local savedClock: number?
 
 local function buildHelicopter(parent: Instance, color: Color3)
 	local m = Instance.new("Model")
@@ -46,29 +51,291 @@ local function buildHelicopter(parent: Instance, color: Color3)
 	return m, rotor
 end
 
+-- the menu diorama is built far above the map so it never clips the office/city
+local MENU_BASE = Vector3.new(0, 2000, 0)
+
+local function mPart(parent: Instance, size: Vector3, cf: CFrame, color: Color3, material: Enum.Material?): Part
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.CanCollide = false
+	p.CastShadow = false
+	p.Size = size
+	p.CFrame = cf
+	p.Color = color
+	p.Material = material or Enum.Material.SmoothPlastic
+	p.Parent = parent
+	return p
+end
+
+-- a tall glass tower covered in warm-lit windows, with a few chaotic office floors you can see into
+local function buildTower(folder: Instance, base: Vector3, floors: number, flicker: { Part }, interiors: { any })
+	local W = 46
+	local fh = 12 -- floor height
+	local glass = Color3.fromRGB(26, 32, 54)
+	local frame = Color3.fromRGB(18, 20, 30)
+	local warm = Color3.fromRGB(255, 206, 120)
+	local chaosFloors = { math.floor(floors * 0.5), math.floor(floors * 0.5) + 1, math.floor(floors * 0.62) }
+	local function isChaos(f)
+		for _, c in chaosFloors do
+			if c == f then
+				return true
+			end
+		end
+		return false
+	end
+	-- core slab + corners
+	mPart(folder, Vector3.new(W, floors * fh, W), CFrame.new(base + Vector3.new(0, floors * fh / 2, 0)), glass, Enum.Material.Glass)
+	for _, sx in { -1, 1 } do
+		for _, sz in { -1, 1 } do
+			mPart(folder, Vector3.new(1.6, floors * fh, 1.6), CFrame.new(base + Vector3.new(sx * W / 2, floors * fh / 2, sz * W / 2)),
+				frame, Enum.Material.Metal)
+		end
+	end
+	local rng = Random.new(99)
+	-- windows on all four faces
+	for f = 0, floors - 1 do
+		local z = base.Y + f * fh + fh / 2
+		-- floor slab line
+		for _, face in { 0, 1 } do
+			-- face 0 = +/-Z faces, face 1 = +/-X faces
+		end
+		mPart(folder, Vector3.new(W + 0.4, 0.6, W + 0.4), CFrame.new(base.X, z - fh / 2, base.Z), frame)
+		local chaos = isChaos(f)
+		for col = -3, 3 do
+			for _, face in { "px", "nx", "pz", "nz" } do
+				local lit = chaos or rng:NextNumber() < 0.78
+				local col3 = lit and (chaos and Color3.fromRGB(255, 170, 90) or warm) or Color3.fromRGB(40, 48, 72)
+				local winSize, cf
+				local off = col * 5.6
+				if face == "pz" then
+					cf = CFrame.new(base.X + off, z, base.Z + W / 2 + 0.1)
+					winSize = Vector3.new(4.4, fh - 2.4, 0.3)
+				elseif face == "nz" then
+					cf = CFrame.new(base.X + off, z, base.Z - W / 2 - 0.1)
+					winSize = Vector3.new(4.4, fh - 2.4, 0.3)
+				elseif face == "px" then
+					cf = CFrame.new(base.X + W / 2 + 0.1, z, base.Z + off)
+					winSize = Vector3.new(0.3, fh - 2.4, 4.4)
+				else
+					cf = CFrame.new(base.X - W / 2 - 0.1, z, base.Z + off)
+					winSize = Vector3.new(0.3, fh - 2.4, 4.4)
+				end
+				local w = mPart(folder, winSize, cf, col3, lit and Enum.Material.Neon or Enum.Material.Glass)
+				if lit and (chaos or rng:NextNumber() < 0.15) and #flicker < 60 then
+					table.insert(flicker, w)
+				end
+				-- interior hint on the front (-Z) chaos floors: desks + figures behind the glass
+				if chaos and face == "nz" and col % 2 == 0 then
+					local ix = base.X + off
+					mPart(folder, Vector3.new(3.4, 1.2, 1.6), CFrame.new(ix, z - fh / 2 + 1.6, base.Z - W / 2 + 1.6),
+						Color3.fromRGB(60, 44, 30), Enum.Material.Wood) -- desk
+					local fig = mPart(folder, Vector3.new(1.1, 2.4, 1.1), CFrame.new(ix, z - fh / 2 + 2.6, base.Z - W / 2 + 2.6),
+						Color3.fromRGB(20, 22, 34)) -- a silhouette worker, waving
+					mPart(folder, Vector3.new(0.9, 0.9, 0.9), CFrame.new(ix, z - fh / 2 + 4.0, base.Z - W / 2 + 2.6),
+						Color3.fromRGB(230, 190, 150), nil) -- head
+					table.insert(interiors, { part = fig, base = fig.CFrame, phase = rng:NextNumber(0, 6) })
+				end
+			end
+		end
+	end
+	-- a glowing WOLF & CO. neon sign high on the front face
+	local signY = base.Y + (floors - 2) * fh
+	local signBack = mPart(folder, Vector3.new(34, 7, 1), CFrame.new(base.X, signY, base.Z - W / 2 - 0.6),
+		Color3.fromRGB(10, 10, 14))
+	local sg = Instance.new("SurfaceGui")
+	sg.Face = Enum.NormalId.Front
+	sg.PixelsPerStud = 24
+	sg.Parent = signBack
+	-- face -Z: SurfaceGui Front points +Z by default, so rotate the sign to face the camera side
+	signBack.CFrame = CFrame.new(base.X, signY, base.Z - W / 2 - 0.6) * CFrame.Angles(0, math.pi, 0)
+	local neon = Instance.new("TextLabel")
+	neon.Size = UDim2.fromScale(1, 0.6)
+	neon.Position = UDim2.fromScale(0, 0.08)
+	neon.BackgroundTransparency = 1
+	neon.Font = Enum.Font.FredokaOne
+	neon.Text = "WOLF & CO."
+	neon.TextColor3 = UI.colors.gold
+	neon.TextScaled = true
+	neon.Parent = sg
+	local neon2 = Instance.new("TextLabel")
+	neon2.Size = UDim2.fromScale(1, 0.28)
+	neon2.Position = UDim2.fromScale(0, 0.68)
+	neon2.BackgroundTransparency = 1
+	neon2.Font = Enum.Font.GothamBold
+	neon2.Text = "FLOOR 100"
+	neon2.TextColor3 = Color3.fromRGB(120, 200, 255)
+	neon2.TextScaled = true
+	neon2.Parent = sg
+	local signGlow = mPart(folder, Vector3.new(34, 7, 0.3), CFrame.new(base.X, signY, base.Z - W / 2 - 1.1),
+		UI.colors.gold, Enum.Material.Neon)
+	signGlow.Transparency = 0.75
+	-- rooftop parapet + antenna + helipad H
+	local roofY = base.Y + floors * fh
+	mPart(folder, Vector3.new(W + 2, 1.5, W + 2), CFrame.new(base.X, roofY + 0.75, base.Z), frame, Enum.Material.Metal)
+	mPart(folder, Vector3.new(0.8, 20, 0.8), CFrame.new(base.X + 12, roofY + 10, base.Z + 12), Color3.fromRGB(60, 60, 70),
+		Enum.Material.Metal)
+	mPart(folder, Vector3.new(1.2, 1.2, 1.2), CFrame.new(base.X + 12, roofY + 20, base.Z + 12), Color3.fromRGB(255, 70, 70),
+		Enum.Material.Neon)
+	return Vector3.new(base.X, roofY, base.Z)
+end
+
+-- an American flag on a pole; returns the cloth segments so the loop can wave them
+local function buildFlag(folder: Instance, at: Vector3): { any }
+	mPart(folder, Vector3.new(0.6, 26, 0.6), CFrame.new(at + Vector3.new(0, 13, 0)), Color3.fromRGB(220, 220, 230),
+		Enum.Material.Metal)
+	mPart(folder, Vector3.new(1, 1, 1), CFrame.new(at + Vector3.new(0, 26, 0)), UI.colors.gold, Enum.Material.Neon)
+	local segs = {}
+	local top = at + Vector3.new(0, 24, 0)
+	local segW = 1.7
+	for s = 0, 7 do
+		local x = top.X + 0.4 + s * segW
+		local seg = Instance.new("Model")
+		seg.Name = "FlagSeg"
+		for stripe = 0, 12 do
+			local red = stripe % 2 == 0
+			local p = mPart(seg, Vector3.new(segW, 0.75, 0.15),
+				CFrame.new(x, top.Y - stripe * 0.75, at.Z), red and Color3.fromRGB(200, 40, 50) or Color3.fromRGB(245, 245, 248))
+			if stripe < 7 and s < 4 then
+				p.Color = Color3.fromRGB(30, 50, 130) -- blue canton over the first 7 stripes / 4 segments
+				if (stripe % 2 == 0) and (s % 2 == 0) then
+					mPart(seg, Vector3.new(0.25, 0.25, 0.2), CFrame.new(x, top.Y - stripe * 0.75, at.Z - 0.1),
+						Color3.fromRGB(255, 255, 255))
+				end
+			end
+		end
+		seg.Parent = folder
+		table.insert(segs, { model = seg, x = s, basePivot = seg:GetPivot() })
+	end
+	return segs
+end
+
+-- a ring of simpler background skyscrapers for a city-at-dusk skyline
+local function buildSkyline(folder: Instance, base: Vector3)
+	local rng = Random.new(7)
+	for i = 0, 15 do
+		local a = i / 16 * math.pi * 2
+		local r = rng:NextNumber(170, 340)
+		local h = rng:NextNumber(120, 320)
+		local w = rng:NextNumber(26, 46)
+		local pos = base + Vector3.new(math.cos(a) * r, h / 2 - 40, math.sin(a) * r)
+		local tint = Color3.fromRGB(rng:NextInteger(24, 40), rng:NextInteger(28, 44), rng:NextInteger(44, 66))
+		mPart(folder, Vector3.new(w, h, w), CFrame.new(pos), tint, Enum.Material.Glass)
+		-- a few lit window bands
+		for b = 1, math.floor(h / 24) do
+			if rng:NextNumber() < 0.6 then
+				mPart(folder, Vector3.new(w + 0.3, 2, w + 0.3), CFrame.new(pos + Vector3.new(0, -h / 2 + b * 24, 0)),
+					Color3.fromRGB(255, 200, 130), Enum.Material.Neon).Transparency = 0.1
+			end
+		end
+	end
+end
+
+-- gentle piano-style background music, synthesised from the built-in tone so nothing needs uploading
+local function startMusic()
+	if musicOn then
+		return
+	end
+	musicOn = true
+	local folder = Instance.new("Folder")
+	folder.Name = "MenuMusic"
+	folder.Parent = SoundService
+	musicFolder = folder
+	-- a calm vi-IV-I-V progression, arpeggiated (semitones relative to A3)
+	local chords = { { -12, -8, -5, 0 }, { -16, -9, -5, -1 }, { -17, -12, -8, -5 }, { -14, -10, -7, -2 } }
+	task.spawn(function()
+		local step = 0
+		while musicOn and folder.Parent do
+			local chord = chords[(step // 4) % #chords + 1]
+			local semi = chord[(step % 4) + 1]
+			local s = Instance.new("Sound")
+			s.SoundId = "rbxasset://sounds/electronicpingshort.wav"
+			s.PlaybackSpeed = 2 ^ (semi / 12) * 0.5
+			s.Volume = 0.28
+			s.Parent = folder
+			s:Play()
+			task.delay(2.5, function()
+				s:Destroy()
+			end)
+			step += 1
+			task.wait(0.5)
+		end
+	end)
+end
+
+local function stopMusic()
+	musicOn = false
+	if musicFolder then
+		musicFolder:Destroy()
+		musicFolder = nil
+	end
+end
+
 local function startFlyover()
 	local cam = Workspace.CurrentCamera
 	cam.CameraType = Enum.CameraType.Scriptable
+	-- dusk: 6:30 PM
+	savedClock = Lighting.ClockTime
+	Lighting.ClockTime = 18.5
 	local folder = Instance.new("Folder")
-	folder.Name = "MenuHelicopters"
+	folder.Name = "MenuScene"
 	folder.Parent = Workspace
-	helicopters = folder
+	menuScene = folder
+
+	local flicker: { Part } = {}
+	local interiors: { any } = {}
+	local roofTop = buildTower(folder, MENU_BASE, 26, flicker, interiors)
+	buildSkyline(folder, MENU_BASE)
+	local flagSegs = buildFlag(folder, roofTop + Vector3.new(-16, 0, -16))
+
+	-- flying papers swirling out of the chaos floors
+	local papers = {}
+	local chaosY = MENU_BASE.Y + 26 * 12 * 0.55
+	for _ = 1, 46 do
+		local pp = mPart(folder, Vector3.new(1.1, 0.05, 1.5),
+			CFrame.new(MENU_BASE + Vector3.new(math.random(-40, 40), chaosY - MENU_BASE.Y + math.random(-30, 30),
+				math.random(-40, 40))), Color3.fromRGB(250, 250, 245))
+		table.insert(papers, { part = pp, phase = math.random() * 6.28, radius = math.random(28, 60),
+			y0 = pp.Position.Y, spin = math.random(2, 6) })
+	end
+
 	local choppers = {}
 	for i, c in { Color3.fromRGB(230, 60, 50), Color3.fromRGB(240, 240, 240), Color3.fromRGB(30, 30, 35) } do
 		local m, rotor = buildHelicopter(folder, c)
-		table.insert(choppers, { model = m, rotor = rotor, radius = 150 + i * 45, height = 30 + i * 18, speed = 0.08 + i * 0.03,
+		table.insert(choppers, { model = m, rotor = rotor, radius = 150 + i * 55, height = 150 + i * 40, speed = 0.08 + i * 0.03,
 			phase = i * 2.1 })
 	end
+
+	startMusic()
 	local t0 = os.clock()
 	flyConn = RunService.RenderStepped:Connect(function()
 		local t = os.clock() - t0
-		local a = t * 0.05
-		cam.CFrame = CFrame.lookAt(Vector3.new(math.cos(a) * 240, 60 + math.sin(t * 0.2) * 10, math.sin(a) * 240),
-			Vector3.new(0, 12, 0))
+		local a = t * 0.04
+		local look = MENU_BASE + Vector3.new(0, 170, 0)
+		cam.CFrame = CFrame.lookAt(MENU_BASE + Vector3.new(math.cos(a) * 430, 150 + math.sin(t * 0.2) * 20, math.sin(a) * 430),
+			look)
+		-- flicker the chaos windows
+		for _, w in flicker do
+			w.Transparency = (math.sin(t * 8 + w.Position.Y) > 0.3) and 0 or 0.4
+		end
+		-- waving flag: offset each segment from its stored base pivot (further segments wave more)
+		for _, seg in flagSegs do
+			local wave = math.sin(t * 3 - seg.x * 0.6) * (0.3 + seg.x * 0.25)
+			seg.model:PivotTo(seg.basePivot * CFrame.new(0, 0, wave) * CFrame.Angles(0, math.rad(wave * 6), 0))
+		end
+		-- swirling papers
+		for _, pr in papers do
+			local b = pr.phase + t * 0.6
+			pr.part.CFrame = CFrame.new(MENU_BASE.X + math.cos(b) * pr.radius, pr.y0 + math.sin(t * 0.5 + pr.phase) * 14,
+				MENU_BASE.Z + math.sin(b) * pr.radius) * CFrame.Angles(t * pr.spin, t * pr.spin * 0.7, 0)
+		end
+		-- insane workers inside: shaking
+		for _, it in interiors do
+			it.part.CFrame = it.base * CFrame.Angles(0, 0, math.sin(t * 10 + it.phase) * 0.25)
+		end
 		for _, h in choppers do
 			local b = h.phase + t * h.speed
-			local pos = Vector3.new(math.cos(b) * h.radius, h.height + math.sin(t + h.phase) * 4, math.sin(b) * h.radius)
-			local ahead = Vector3.new(math.cos(b + 0.05) * h.radius, pos.Y, math.sin(b + 0.05) * h.radius)
+			local pos = MENU_BASE + Vector3.new(math.cos(b) * h.radius, h.height + math.sin(t + h.phase) * 6, math.sin(b) * h.radius)
+			local ahead = MENU_BASE + Vector3.new(math.cos(b + 0.05) * h.radius, pos.Y - MENU_BASE.Y, math.sin(b + 0.05) * h.radius)
 			h.model:PivotTo(CFrame.lookAt(pos, ahead))
 			h.rotor.CFrame = h.model:GetPivot() * CFrame.new(0, 3.8, 0) * CFrame.Angles(0, t * 25, 0)
 		end
@@ -80,9 +347,13 @@ local function stopFlyover()
 		flyConn:Disconnect()
 		flyConn = nil
 	end
-	if helicopters then
-		helicopters:Destroy()
-		helicopters = nil
+	stopMusic()
+	if menuScene then
+		menuScene:Destroy()
+		menuScene = nil
+	end
+	if savedClock then
+		Lighting.ClockTime = savedClock
 	end
 	Workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
 end
