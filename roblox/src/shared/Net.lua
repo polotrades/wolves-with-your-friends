@@ -40,6 +40,7 @@ local NAMES = {
 	"CallSpeak", -- server -> all: (deskId, position, text, voice, pitch, speed) bystanders hear the call at the desk
 	"Raid", -- server -> all: play the police-raid cutscene (seconds)
 	"Gesture", -- player -> server -> all: (name) play a hand gesture on this player's character
+	"Piano", -- server -> player: open the keyboard (part); player -> server: (noteIndex, position) play a note
 }
 
 local Net = {}

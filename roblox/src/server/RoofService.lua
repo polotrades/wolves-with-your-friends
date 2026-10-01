@@ -10,6 +10,7 @@ local Debris = game:GetService("Debris")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Net = require(Shared:WaitForChild("Net"))
 local Config = require(Shared:WaitForChild("Config"))
+local Audio = require(script.Parent:WaitForChild("Audio"))
 
 local RoofService = {}
 
@@ -93,6 +94,7 @@ local function shatter(model: any)
 	end
 	model:SetAttribute("Broken", true)
 	local pivot = model:GetPivot()
+	Audio.at("glassBreak", pivot.Position, 1)
 	local color = model:GetAttribute("LiquidColor") or Color3.fromRGB(200, 150, 60)
 	Net.Fx:FireAllClients("puddle", CFrame.new(pivot.Position - Vector3.new(0, pivot.Position.Y % 1, 0)))
 	for _ = 1, 8 do

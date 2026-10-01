@@ -46,4 +46,23 @@ Config.CHEER_SOUND_ID = ""
 Config.DJ_MUSIC_ID = "" -- rooftop DJ loop (Creator Store audio); leave "" for a silent stage
 Config.ELEVATOR_DING_ID = ""
 
+-- Spatial sound effects. Fill these with Creator Store audio asset ids ("rbxassetid://...") and they play
+-- automatically at the right place; leave "" and that effect is silent. Piano notes are one octave, C..B.
+Config.SOUNDS = {
+	ring = "",
+	impactSoft = "",
+	impactHard = "",
+	glassBreak = "",
+	elevatorDing = "",
+	elevatorDoors = "",
+	splash = "",
+	pour = "",
+	printPage = "",
+	coin = "",
+	gong = "",
+}
+Config.PIANO_NOTES = { -- C, C#, D, D#, E, F, F#, G, G#, A, A#, B
+	"", "", "", "", "", "", "", "", "", "", "", "",
+}
+
 return Config

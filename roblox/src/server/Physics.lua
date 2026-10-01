@@ -10,6 +10,7 @@ local Debris = game:GetService("Debris")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Net = require(Shared:WaitForChild("Net"))
+local Audio = require(script.Parent:WaitForChild("Audio"))
 
 local Physics = {}
 
@@ -171,6 +172,7 @@ function Physics.watchFishTank(tank: Model)
 		end
 		broken = true
 		Net.Fx:FireAllClients("fishtank", tank:GetPivot())
+		Audio.at("glassBreak", tank:GetPivot().Position, 1)
 		local swap = ReplicatedStorage:FindFirstChild("PropModels")
 		swap = swap and swap:FindFirstChild("FishTankBroken")
 		if swap then
@@ -198,8 +200,32 @@ end
 
 Physics.setup = {} -- CallService fills this with helpers it shares (none yet)
 
+-- thud when a grabbed/thrown item lands hard
+local function watchImpact(model: Instance)
+	local root = (model :: any).PrimaryPart or (model:IsA("BasePart") and model)
+	if not root then
+		return
+	end
+	root.Touched:Connect(function()
+		local speed = root.AssemblyLinearVelocity.Magnitude
+		if speed < 14 then
+			return
+		end
+		local now = os.clock()
+		if root:GetAttribute("LastThud") and now - root:GetAttribute("LastThud") < 0.25 then
+			return
+		end
+		root:SetAttribute("LastThud", now)
+		Audio.at(speed > 40 and "impactHard" or "impactSoft", root.Position, math.clamp(speed / 60, 0.2, 1))
+	end)
+end
+
 function Physics.init()
 	Net.Grab.OnServerEvent:Connect(onGrab)
+	for _, m in CollectionService:GetTagged("Grabbable") do
+		watchImpact(m)
+	end
+	CollectionService:GetInstanceAddedSignal("Grabbable"):Connect(watchImpact)
 	Net.Drop.OnServerEvent:Connect(onDrop)
 	for _, bin in CollectionService:GetTagged("TrashBin") do
 		Physics.watchBin(bin)

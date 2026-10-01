@@ -10,6 +10,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Layout = require(Shared:WaitForChild("OfficeLayout"))
 local ArtLibrary = require(script.Parent:WaitForChild("ArtLibrary"))
 local Props = require(script.Parent:WaitForChild("Props"))
+local Audio = require(script.Parent:WaitForChild("Audio"))
 
 local OfficeBuilder = {}
 
@@ -329,6 +330,12 @@ local function buildElevator(folder: Folder, cf: CFrame)
 	}
 	function elevator.setOpen(open: boolean, instant: boolean?)
 		elevator.isOpen = open
+		if not instant then
+			Audio.on("elevatorDoors", display)
+			if open then
+				Audio.on("elevatorDing", display)
+			end
+		end
 		for _, l in leaves do
 			local goal = open and l.open or l.closed
 			if instant then
@@ -525,6 +532,9 @@ local function buildProps(folder: Folder, office)
 			end
 			if spec.n == "FishTank" then
 				m:AddTag("FishTank")
+			end
+			if spec.n == "GrandPiano" then
+				m:AddTag("Piano")
 			end
 			if EDIBLE[spec.n] then
 				m:AddTag("Edible")

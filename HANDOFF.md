@@ -171,8 +171,14 @@ The owner prefers **quality over speed** and wants **models built in Blender fir
      a touch wheel lists them, and holding a thrown item puts both arms into a grab/aim pose. Poses overlay
      `Motor6D.Transform` on the shoulders/elbows so they ride on the walk animation, and they're replicated via the
      Gesture remote so everyone sees them. Hooked into Throwing (grab pose) and relayed by the server.
-9. **Spatial sound effects.** Phone ring, prop impacts, breaking, elevator ding and doors, DJ music, and a
-   playable piano.
+9. ~~**Spatial sound effects.**~~ Done (not yet tested; add asset ids to hear them).
+   - `shared/Config.lua`: `SOUNDS` (ring, impactSoft/Hard, glassBreak, elevatorDing/Doors, splash, pour, printPage,
+     coin, gong) and `PIANO_NOTES` (one octave), all default "" - fill with Creator Store audio ids and they play.
+   - `server/Audio.lua`: plays one-shot spatial sounds (server-made, so everyone nearby hears). Empty id = silent.
+   - Wired: hard landings of grabbed/thrown props (`Physics`), fish tank + bottle breaking, elevator ding + doors
+     (`OfficeBuilder`), phone ring (existing `RING_SOUND_ID`), DJ music (`RoofService`).
+   - Playable piano: `server/PianoService.lua` adds a "Play Piano" prompt to the grand piano; `client/Piano.lua` is
+     the keyboard (click or A S D F G H J), and notes play at the piano for everyone.
 10. **Talking mouths** (AudioAnalyzer on each player's voice) and a **headset mic** on every character.
 
 ## Notes
