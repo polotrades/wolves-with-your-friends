@@ -16,6 +16,8 @@ local Decor = require(Client:WaitForChild("Decor"))
 local IdleScreens = require(Client:WaitForChild("IdleScreens"))
 local OfficeBoards = require(Client:WaitForChild("OfficeBoards"))
 local DeskMirror = require(Client:WaitForChild("DeskMirror"))
+local Throwing = require(Client:WaitForChild("Throwing"))
+local Effects = require(Client:WaitForChild("Effects"))
 local Menu = require(Client:WaitForChild("Menu"))
 local Apps = Client:WaitForChild("apps")
 local PhoneApp = require(Apps:WaitForChild("PhoneApp"))
@@ -40,10 +42,13 @@ City.init()
 Decor.init()
 IdleScreens.init()
 OfficeBoards.init()
+Throwing.init()
+Effects.init()
 
 -- main menu first; the HUD appears once you spawn onto floor 100
 Menu.onSpawn = function()
 	Hud.setVisible(true)
+	Throwing.setEnabled(true)
 end
 Menu.show()
 
@@ -76,6 +81,14 @@ app("antivirus", "Shark Shield", "🛡️", Color3.fromRGB(40, 170, 110), Antivi
 app("backgrounds", "Backgrounds", "🖼️", Color3.fromRGB(150, 90, 220), BackgroundsApp.open, 23, false)
 Desktop.openFile = FilesApp.openItem
 DeskMirror.init()
+
+-- no grabbing while you're sitting at the computer
+Desktop.onOpen = function()
+	Throwing.setEnabled(false)
+end
+Desktop.onClose = function()
+	Throwing.setEnabled(true)
+end
 
 Desktop.onLeave = function()
 	if PhoneApp.call then

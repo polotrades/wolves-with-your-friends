@@ -34,6 +34,8 @@ export type AppDef = {
 local Desktop = {
 	onLeave = nil :: (() -> ())?,
 	openFile = nil :: ((any) -> ())?, -- set by the Files app: opens a file from a desktop icon
+	onOpen = nil :: (() -> ())?,
+	onClose = nil :: (() -> ())?,
 }
 
 local TASKBAR_H = 48
@@ -612,6 +614,9 @@ function Desktop.open(deskId: number?)
 		return
 	end
 	gui.Enabled = true
+	if Desktop.onOpen then
+		Desktop.onOpen()
+	end
 	bootScreen()
 	Desktop.refreshInfo()
 	mirrorDirty = true
@@ -638,6 +643,9 @@ function Desktop.close()
 	end
 	closeMenus()
 	gui.Enabled = false
+	if Desktop.onClose then
+		Desktop.onClose()
+	end
 	State.deskId = nil
 	Net.LeaveDesk:FireServer()
 	Workspace.CurrentCamera.CameraType = Enum.CameraType.Custom

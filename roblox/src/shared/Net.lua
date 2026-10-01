@@ -31,6 +31,10 @@ local NAMES = {
 	"PumpResult", -- server -> player: { started?, stock, spent, returned }
 	"Casino", -- player -> server: (action, amount?, choice?) wallet | deposit | cashout | updown | slots
 	"CasinoResult", -- server -> player: { wallet, game?, win?, bet?, up?, reels?, error?, note? }
+	"Grab", -- player -> server: ask to pick up a part (network ownership)
+	"Drop", -- player -> server: let go / throw (part, velocity)
+	"Interact", -- player -> server: (kind, target) eat / pour / print / etc.
+	"Fx", -- server -> all: (kind, cframe) spawn a shared effect (puddle, splash, print)
 }
 
 local Net = {}

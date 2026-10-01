@@ -32,6 +32,16 @@ for _, n in {
 } do
 	FIXED[n] = true
 end
+
+-- props the physics step treats specially
+local EDIBLE = {}
+for _, n in { "Donut", "Burger", "PizzaSlice", "Sandwich", "Apple", "Banana" } do
+	EDIBLE[n] = true
+end
+local INTERACT_TAG = {
+	CoffeeMachine = "CoffeeSource", EspressoBar = "CoffeeSource", Printer = "Printer",
+	TrashBin = "TrashBin", RecyclingBins = "TrashBin", PaperCup = "Cup",
+}
 -- props that give off light, and how
 local GLOW = {
 	CeilingLight = { kind = "SurfaceLight", brightness = 1.2, range = 22, color = Color3.fromRGB(255, 244, 228) },
@@ -515,6 +525,12 @@ local function buildProps(folder: Folder, office)
 			end
 			if spec.n == "FishTank" then
 				m:AddTag("FishTank")
+			end
+			if EDIBLE[spec.n] then
+				m:AddTag("Edible")
+			end
+			if INTERACT_TAG[spec.n] then
+				m:AddTag(INTERACT_TAG[spec.n])
 			end
 			if not FIXED[spec.n] then
 				Props.movable(m, spec.n == "Sofa" and 90000 or nil)

@@ -1,5 +1,7 @@
 -- Physics props: anything here can be grabbed with the mouse (DragDetector), dragged, and flung.
 -- Also scatters office chaos: papers, loose cash, cash stacks, crumpled paper balls and cups.
+local CollectionService = game:GetService("CollectionService")
+
 local Props = {}
 
 -- Welds every part of a model to its root and makes the whole thing draggable.
@@ -31,6 +33,12 @@ function Props.movable(target: Instance, maxForce: number?)
 	drag.Responsiveness = 18
 	drag.MaxActivationDistance = 22
 	drag.Parent = target
+	-- grab + throw (Throwing.lua on the client, Physics.lua on the server)
+	if target:IsA("Model") then
+		CollectionService:AddTag(target, "Grabbable")
+	else
+		CollectionService:AddTag(root, "Grabbable")
+	end
 	return root
 end
 

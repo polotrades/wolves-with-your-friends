@@ -115,10 +115,16 @@ The owner prefers **quality over speed** and wants **models built in Blender fir
    security codes and crypto password and moving their money out. That is too close to a real remote-access scam
    playbook, so it won't be built. The existing Request Access button and the Remote Access session shell from
    step 1 stay as they are. A harmless replacement can be designed with the owner.
-3. **Physics.** Everything can be grabbed and thrown, with a throw key.
-   - Trash bins take items in and spill them when thrown.
-   - Coffee only pours into a cup, cups spill and leave puddles, and food can be eaten.
-   - The fish tank breaks (swap in the FishTankBroken model); the printer prints.
+3. ~~**Physics.**~~ Done (not yet tested in Studio).
+   - Grab + throw: `client/Throwing.lua` (look at a prop, E to pick up, hold Q to charge and throw, E to drop;
+     GRAB/THROW buttons on touch) and `server/Physics.lua` (grants network ownership, caps throw speed, records the
+     thrower). Grabbing is off while the computer is open. `Props.movable` tags every movable prop "Grabbable".
+   - `server/Interactions.lua`: ProximityPrompts to Eat food, Pour Coffee (spawns a cup) and Print (a page drops
+     out). Cups leave a puddle when tipped or thrown while full. `client/Effects.lua` draws the Fx (puddle, pour,
+     eat, print, fish-tank splash).
+   - Trash bins (TrashBin / RecyclingBins) swallow items dropped in and spill them when the bin is thrown.
+   - The fish tank breaks when hit hard and swaps in FishTankBroken (needs the imported model; falls back to a box).
+   - Remaining: knock-OFF of the roof is step 4; thrown-item damage to players is minimal for now.
 4. **Luxury rooftop (Blender first).**
    - Elevator buttons ROOFTOP / OFFICE.
    - A big pool, bars, a DJ stage with music, and lots of decor.
