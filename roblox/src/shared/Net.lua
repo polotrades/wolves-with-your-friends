@@ -39,6 +39,7 @@ local NAMES = {
 	"Music", -- server -> all: (on, assetId) DJ music toggle for client ambience
 	"CallSpeak", -- server -> all: (deskId, position, text, voice, pitch, speed) bystanders hear the call at the desk
 	"Raid", -- server -> all: play the police-raid cutscene (seconds)
+	"Gesture", -- player -> server -> all: (name) play a hand gesture on this player's character
 }
 
 local Net = {}

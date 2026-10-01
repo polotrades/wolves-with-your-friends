@@ -9,6 +9,7 @@ local CollectionService = game:GetService("CollectionService")
 local Workspace = game:GetService("Workspace")
 
 local UI = require(script.Parent:WaitForChild("UI"))
+local Gestures = require(script.Parent:WaitForChild("Gestures"))
 local Net = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Net"))
 
 local Throwing = {
@@ -116,6 +117,7 @@ local function release(throwPower: number)
 		velocity = cam.CFrame.LookVector * (45 + throwPower * 95) + Vector3.new(0, 12 + throwPower * 10, 0) + base
 	end
 	Net.Drop:FireServer(part, velocity)
+	Gestures.setGrab(false)
 	held = nil
 end
 

@@ -166,8 +166,11 @@ The owner prefers **quality over speed** and wants **models built in Blender fir
    - `server/RaidService.lua`: helicopters circle outside with officers rappelling on ropes, and cartoon officers
      (navy, caps, water-blaster "guns") march out of the elevators. `client/Raid.lua` plays the siren flash, the
      "FLOOR 100 RAIDED" banner and a pulled-back shaking camera.
-8. **Hands.** First-person hands you can move independently, point, gesture, and a grab pose. The hand models are
-   in props (HandOpen/Point/ThumbsUp/Fist/Peace/CallMe/Grab).
+8. ~~**Hands.**~~ Done (not yet tested).
+   - `client/Gestures.lua`: number keys 1-7 play hand poses (wave, point, thumbs up, peace, fist, call-me, clap),
+     a touch wheel lists them, and holding a thrown item puts both arms into a grab/aim pose. Poses overlay
+     `Motor6D.Transform` on the shoulders/elbows so they ride on the walk animation, and they're replicated via the
+     Gesture remote so everyone sees them. Hooked into Throwing (grab pose) and relayed by the server.
 9. **Spatial sound effects.** Phone ring, prop impacts, breaking, elevator ding and doors, DJ music, and a
    playable piano.
 10. **Talking mouths** (AudioAnalyzer on each player's voice) and a **headset mic** on every character.

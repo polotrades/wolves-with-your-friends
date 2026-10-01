@@ -33,6 +33,12 @@ GameLoop.run(office)
 
 local joined: { [Player]: boolean } = {}
 
+Net.Gesture.OnServerEvent:Connect(function(player, name)
+	if type(name) == "string" and #name <= 16 then
+		Net.Gesture:FireAllClients(player, name)
+	end
+end)
+
 Net.Spawn.OnServerEvent:Connect(function(player, look)
 	CharacterService.setLook(player, look)
 	if joined[player] then
