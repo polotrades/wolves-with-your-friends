@@ -2329,19 +2329,26 @@ def pool_lounger(x):
 
 
 # ---------------------------------------------------------------- parasol
-def parasol(x):
-    p = prop("Parasol", x)
+def parasol(x, canopy=CANVAS_RED, trim=CANVAS_CREAM, pole=TEAK, rib_r=0.95, top=2.55, name="Parasol"):
+    p = prop(name, x)
     cone("Base", 0.28, 0.22, 0.08, (0, 0, 0.04), DARKMETAL, p)
-    tube("Pole", 0.03, (0, 0, 0.08), (0, 0, 2.3), TEAK, p)
-    # scalloped canopy from 8 angled panels
+    tube("Pole", 0.03, (0, 0, 0.08), (0, 0, top), pole, p)
+    # a real dome canopy: a wide shallow cone, apex up, with a short drop skirt at the rim
+    cone("Canopy", rib_r, 0.06, 0.42, (0, 0, top + 0.21), canopy, p, smooth=True)
+    cone("Skirt", rib_r + 0.02, rib_r - 0.1, 0.14, (0, 0, top - 0.05), trim, p, smooth=True, outline=False)
+    # scalloped rim: little lobes between the ribs
+    for i in range(8):
+        a = 2 * math.pi * (i + 0.5) / 8
+        sphere("Scallop", 0.1, ((rib_r + 0.02) * math.cos(a), (rib_r + 0.02) * math.sin(a), top - 0.12),
+               (1, 1, 0.4), trim, p, outline=False)
+    # ribs under the canopy
     for i in range(8):
         a = 2 * math.pi * i / 8
-        col = CANVAS_RED if i % 2 == 0 else CANVAS_CREAM
-        cube("Panel", 1, (0.5 * math.cos(a), 0.5 * math.sin(a), 2.35), (0.42, 0.42, 0.02), col, p,
-             rot=(R(18) * math.sin(a), -R(18) * math.cos(a), a), bevel=0.01, outline=False)
-        tube("Rib", 0.008, (0, 0, 2.3), (0.95 * math.cos(a), 0.95 * math.sin(a), 2.2), CHROME_RT, p, outline=False)
-    sphere("Finial", 0.05, (0, 0, 2.5), (1, 1, 1.3), GOLD, p)
-    torus("Hub", 0.05, 0.02, (0, 0, 2.3), DARKMETAL, p, outline=False)
+        tube("Rib", 0.01, (0, 0, top + 0.02), (rib_r * math.cos(a), rib_r * math.sin(a), top - 0.1), CHROME_RT, p,
+             outline=False)
+    tube("Hub", 0.05, (0, 0, top), (0, 0, top + 0.04), DARKMETAL, p, r2=0.05, outline=False)
+    sphere("Finial", 0.05, (0, 0, top + 0.5), (1, 1, 1.4), GOLD, p)
+    tube("FinialStem", 0.012, (0, 0, top + 0.4), (0, 0, top + 0.5), GOLD, p, outline=False)
 
 
 # ---------------------------------------------------------------- planter box
@@ -2756,7 +2763,7 @@ def helipad(x):
     p = prop("Helipad", x)
     tube("Pad", 3.0, (0, 0, 0.0), (0, 0, 0.1), M("Concrete", "PadConcrete", (0.3, 0.3, 0.33), 0.8), p, r2=3.0)
     torus("Ring", 2.7, 0.08, (0, 0, 0.11), M("SmoothPlastic", "PadLine", (0.95, 0.9, 0.2), 0.5), p, outline=False)
-    text("H", "H", (0, 0, 0.12), 2.2, M("SmoothPlastic", "PadLine", (0.95, 0.9, 0.2), 0.5), p, extrude=0.01)
+    text("H", "H", (0, 0, 0.12), 2.2, M("SmoothPlastic", "PadLine", (0.95, 0.9, 0.2), 0.5), p, rot=(0, 0, 0), extrude=0.02)
     for i in range(16):
         a = 2 * math.pi * i / 16
         tube("EdgeLight", 0.04, (2.9 * math.cos(a), 2.9 * math.sin(a), 0.1), (2.9 * math.cos(a), 2.9 * math.sin(a), 0.18),
@@ -2933,19 +2940,30 @@ def lantern(x):
 
 def bar_umbrella(x):
     p = prop("BarUmbrella", x)
-    cone("Base", 0.3, 0.24, 0.1, (0, 0, 0.05), DARKMETAL, p)
-    tube("Pole", 0.035, (0, 0, 0.1), (0, 0, 2.5), M("Wood", "UmbPole", (0.6, 0.45, 0.3), 0.5), p)
-    for i in range(6):
-        a = 2 * math.pi * i / 6
-        col = CANVAS_NAVY if i % 2 == 0 else CANVAS_CREAM
-        cube("Panel", 1, (0.6 * math.cos(a), 0.6 * math.sin(a), 2.5), (0.52, 0.52, 0.02), col, p,
-             rot=(R(14) * math.sin(a), -R(14) * math.cos(a), a), bevel=0.01, outline=False)
-    sphere("Finial", 0.05, (0, 0, 2.7), (1, 1, 1), GOLD, p)
-    # valance
-    for i in range(6):
-        a = 2 * math.pi * i / 6
-        cube("Valance", 1, (1.1 * math.cos(a), 1.1 * math.sin(a), 2.25), (0.3, 0.02, 0.12), CANVAS_CREAM, p, rot=(0, 0, a),
-             bevel=0.01, outline=False)
+    pole = M("Wood", "UmbPole", (0.6, 0.45, 0.3), 0.5)
+    cone("Base", 0.32, 0.26, 0.12, (0, 0, 0.06), DARKMETAL, p)
+    cube("BaseWeight", 1, (0, 0, 0.14), (0.5, 0.5, 0.06), DARKMETAL, p, bevel=0.02, outline=False)
+    tube("Pole", 0.04, (0, 0, 0.12), (0, 0, 2.6), pole, p)
+    top = 2.6
+    # dome canopy (navy) with a cream drop skirt and a scalloped valance
+    cone("Canopy", 1.25, 0.07, 0.5, (0, 0, top + 0.25), CANVAS_NAVY, p, smooth=True)
+    cone("Skirt", 1.28, 1.15, 0.16, (0, 0, top - 0.06), CANVAS_NAVY, p, smooth=True, outline=False)
+    for i in range(8):
+        a = 2 * math.pi * (i + 0.5) / 8
+        sphere("Valance", 0.12, (1.28 * math.cos(a), 1.28 * math.sin(a), top - 0.14), (1, 1, 0.4), CANVAS_CREAM, p,
+               outline=False)
+    # alternating accent gores: thin cream wedges laid on the canopy
+    for i in range(0, 8, 2):
+        a = 2 * math.pi * i / 8
+        cube("Gore", 1, (0.62 * math.cos(a), 0.62 * math.sin(a), top + 0.12), (0.9, 0.14, 0.02), CANVAS_CREAM, p,
+             rot=(R(22) * math.sin(a), -R(22) * math.cos(a), a), bevel=0.01, outline=False)
+    for i in range(8):
+        a = 2 * math.pi * i / 8
+        tube("Rib", 0.012, (0, 0, top + 0.02), (1.22 * math.cos(a), 1.22 * math.sin(a), top - 0.12), CHROME_RT, p,
+             outline=False)
+    tube("Hub", 0.06, (0, 0, top), (0, 0, top + 0.05), DARKMETAL, p, r2=0.06, outline=False)
+    sphere("Finial", 0.06, (0, 0, top + 0.6), (1, 1, 1.4), GOLD, p)
+    tube("FinialStem", 0.014, (0, 0, top + 0.5), (0, 0, top + 0.6), GOLD, p, outline=False)
 
 
 def telescope(x):
