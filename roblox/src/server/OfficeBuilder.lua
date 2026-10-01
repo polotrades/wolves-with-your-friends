@@ -607,16 +607,19 @@ function OfficeBuilder.build()
 	buildProps(folder, office)
 	office.conference = buildConference(folder)
 
-	-- open the doors and spawn inside the middle elevator, looking out at the office
+	-- open the elevator doors (ambiance), but spawn the player standing in the OPEN lobby facing the trading
+	-- floor -- not inside the cramped car, where a first-person camera gets jammed against the walls
 	for _, e in office.elevators do
 		e.setOpen(true, true)
 	end
-	local middle = office.elevators[math.max(1, math.ceil(#office.elevators / 2))]
-	office.lobby = middle and middle.inside or CFrame.new(ArtLibrary.pos(Layout.points.spawn.p) + Vector3.new(0, 3, 0))
+	local sp = Layout.points.spawn.p
+	-- a few studs off the west wall so there's room behind you, standing on the floor, looking east into the office
+	local spawnPos = ArtLibrary.pos({ sp[1] + 4, sp[2], sp[3] }) + Vector3.new(0, 3.5, 0)
+	office.lobby = CFrame.lookAt(spawnPos, spawnPos + Vector3.new(1, 0, 0))
 	local spawn = Instance.new("SpawnLocation")
-	spawn.Name = "ElevatorSpawn"
-	spawn.Size = Vector3.new(4, 1, 4)
-	spawn.CFrame = office.lobby * CFrame.new(0, -2.6, 0)
+	spawn.Name = "LobbySpawn"
+	spawn.Size = Vector3.new(6, 1, 6)
+	spawn.CFrame = CFrame.new(spawnPos - Vector3.new(0, 3.0, 0)) * CFrame.Angles(0, math.pi / 2, 0)
 	spawn.Anchored = true
 	spawn.Transparency = 1
 	spawn.CanCollide = false
