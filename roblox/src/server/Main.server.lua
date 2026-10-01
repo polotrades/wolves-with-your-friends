@@ -15,6 +15,7 @@ local Interactions = require(script.Parent:WaitForChild("Interactions"))
 local RooftopBuilder = require(script.Parent:WaitForChild("RooftopBuilder"))
 local RoofService = require(script.Parent:WaitForChild("RoofService"))
 local GameLoop = require(script.Parent:WaitForChild("GameLoop"))
+local CharacterService = require(script.Parent:WaitForChild("CharacterService"))
 
 local office = OfficeBuilder.build()
 local rooftop = RooftopBuilder.build(office)
@@ -25,11 +26,13 @@ Physics.init()
 Interactions.init(Props)
 RoofService.init(office, rooftop)
 CallService.init(office)
+CharacterService.init()
 GameLoop.run(office)
 
 local joined: { [Player]: boolean } = {}
 
-Net.Spawn.OnServerEvent:Connect(function(player)
+Net.Spawn.OnServerEvent:Connect(function(player, look)
+	CharacterService.setLook(player, look)
 	if joined[player] then
 		return
 	end
@@ -40,6 +43,7 @@ Net.Spawn.OnServerEvent:Connect(function(player)
 		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 		hum.NameDisplayDistance = 0
 		hum.HealthDisplayDistance = 0
+		CharacterService.dress(player, char)
 		hum.Died:Connect(function()
 			task.wait(4)
 			if player.Parent then

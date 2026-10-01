@@ -136,10 +136,16 @@ The owner prefers **quality over speed** and wants **models built in Blender fir
      music (set `Config.DJ_MUSIC_ID`), bottles shatter when thrown, thrown items can knock players off, and a fall
      respawns you at your last safe spot.
    - Config: `DJ_MUSIC_ID` and `ELEVATOR_DING_ID` (both default "").
-5. **Character menu (only before spawning).**
-   - Lots of clothes, hair, accessories, skin colors, boy/girl, body types and animation packs.
-   - A draggable, zoomable 3D preview.
-   - A menu background with candlesticks, cash and a ticker.
+5. ~~**Character menu (only before spawning).**~~ Done (not yet tested).
+   - `shared/Appearance.lua`: all looks built from parts (no catalog assets, so it works in an unpublished place):
+     skin tones, hair styles + colors, hats, glasses, outfits + colors, body types, build (neutral/masc/femme) and
+     animation packs. `Appearance.apply(character, look)` dresses an R15 rig; `sanitize` guards the server.
+   - `client/Customizer.lua`: a draggable, zoomable 3D preview (an R15 rig from CreateHumanoidModelFromDescription)
+     with option tabs, a RANDOM button, and a background of candlesticks, floating cash and a ticker. Reached from
+     the menu's CUSTOMIZE CHARACTER; ENTER FLOOR 100 spawns with the chosen look.
+   - `server/CharacterService.lua`: applies the look and the animation pack on spawn (the look rides in on Spawn).
+   - Note: body-type scaling shows on the spawned character; the preview may not rescale (ViewportFrame Humanoids
+     don't drive scale). Animation-pack asset ids are best-effort and fall back silently.
 6. **Call upgrades and 100+ callers.**
    - Callers get distinct voices (11 TTS voices × pitch/speed).
    - Parody celebrities and a "president" type are fine, but **never real people**.

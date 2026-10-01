@@ -8,6 +8,7 @@ local Workspace = game:GetService("Workspace")
 
 local UI = require(script.Parent:WaitForChild("UI"))
 local Voice = require(script.Parent:WaitForChild("Voice"))
+local Customizer = require(script.Parent:WaitForChild("Customizer"))
 local Net = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Net"))
 
 local Menu = { onSpawn = nil :: (() -> ())? }
@@ -136,7 +137,7 @@ function Menu.show()
 		Parent = col })
 	UI.new("UIListLayout", { Padding = UDim.new(0, 10), Parent = buttons })
 	local spawned = false
-	local function quickMatch()
+	local function quickMatch(look)
 		if spawned then
 			return
 		end
@@ -144,7 +145,7 @@ function Menu.show()
 		local fade = UI.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 1,
 			ZIndex = 100, Parent = gui })
 		TweenService:Create(fade, TweenInfo.new(0.6), { BackgroundTransparency = 0 }):Play()
-		Net.Spawn:FireServer()
+		Net.Spawn:FireServer(look)
 		local char = player.Character or player.CharacterAdded:Wait()
 		char:WaitForChild("HumanoidRootPart")
 		stopFlyover()
@@ -163,7 +164,18 @@ function Menu.show()
 			toast(buttons, "Private offices are coming in the next update!")
 		end },
 		{ "CUSTOMIZE CHARACTER", UI.colors.panel2, function()
-			toast(buttons, "The character creator is coming soon!")
+			if spawned then
+				return
+			end
+			gui.Enabled = false
+			Customizer.open(function(look)
+				if gui then
+					gui.Enabled = true
+				end
+				if look then
+					quickMatch(look)
+				end
+			end)
 		end },
 		{ "SHOP", UI.colors.panel2, function()
 			toast(buttons, "The shop opens soon!")
