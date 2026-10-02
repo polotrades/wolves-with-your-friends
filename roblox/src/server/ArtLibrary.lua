@@ -90,6 +90,50 @@ end
 local prepared: { [string]: Model | false } = {}
 local preparedFolder: Folder
 
+-- normalize a name so matching tolerates case, spaces, underscores and importer suffixes like ".001" or " (1)"
+local function clean(s: string): string
+	return (s:lower():gsub("%.%d+$", ""):gsub("%s*%(%d+%)$", ""):gsub("[%s_%-]", ""))
+end
+
+-- Find the imported-props container, even if it isn't named exactly "PropModels" (case / spelling can drift).
+local cachedRoot: Instance?
+local function propsRoot(): Instance?
+	if cachedRoot and cachedRoot.Parent then
+		return cachedRoot
+	end
+	cachedRoot = ServerStorage:FindFirstChild("PropModels")
+	if not cachedRoot then
+		for _, c in ServerStorage:GetChildren() do
+			local n = clean(c.Name)
+			if n == "propmodels" or n == "propmodel" or n:find("propmodel") or n:find("proppack") then
+				cachedRoot = c
+				break
+			end
+		end
+	end
+	-- last resort: if the packs were dropped straight into ServerStorage, search all of it
+	return cachedRoot or ServerStorage
+end
+
+-- Find a prop node by name inside the container: exact recursive match first, then a tolerant (clean) match.
+local function findProp(name: string): Instance?
+	local root = propsRoot()
+	if not root then
+		return nil
+	end
+	local exact = root:FindFirstChild(name, true)
+	if exact then
+		return exact
+	end
+	local target = clean(name)
+	for _, d in root:GetDescendants() do
+		if (d:IsA("Model") or d:IsA("BasePart")) and clean(d.Name) == target then
+			return d
+		end
+	end
+	return nil
+end
+
 -- Measure an imported model once and fix it up so its pivot is the Blender origin with Blender's orientation.
 local function prepare(name: string): Model | false
 	local cached = prepared[name]
@@ -97,8 +141,7 @@ local function prepare(name: string): Model | false
 		return cached
 	end
 	prepared[name] = false
-	local folder = ServerStorage:FindFirstChild("PropModels")
-	local src = folder and folder:FindFirstChild(name, true)
+	local src = findProp(name)
 	local want, center = expected(name)
 	if not (src and want and center) then
 		return false
