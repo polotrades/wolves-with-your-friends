@@ -142,8 +142,8 @@ local function buildParts(folder: Folder)
 		local p = part({ Name = "RoomLight", Size = Vector3.new(0.2, 0.2, 0.2), Position = ArtLibrary.pos(l.p),
 			Transparency = 1, CanCollide = false, CanQuery = false, Parent = folder })
 		local light = Instance.new("PointLight")
-		light.Brightness = 0.9
-		light.Range = 36
+		light.Brightness = 0.5
+		light.Range = 26
 		light.Color = Color3.fromRGB(255, 238, 215)
 		light.Parent = p
 	end

@@ -32,21 +32,21 @@
     "Lighting": {
       "$properties": {
         "ClockTime": 17.6,
-        "Brightness": 2.5,
-        "EnvironmentDiffuseScale": 0.6,
-        "EnvironmentSpecularScale": 0.6,
+        "Brightness": 1.4,
+        "EnvironmentDiffuseScale": 0.45,
+        "EnvironmentSpecularScale": 0.45,
         "Technology": "Future",
         "Ambient": [
-          0.35,
-          0.3,
-          0.28
+          0.22,
+          0.2,
+          0.2
         ],
         "OutdoorAmbient": [
-          0.55,
-          0.45,
-          0.4
+          0.4,
+          0.34,
+          0.32
         ],
-        "ExposureCompensation": 0.15
+        "ExposureCompensation": -0.15
       },
       "Atmosphere": {
         "$className": "Atmosphere",
